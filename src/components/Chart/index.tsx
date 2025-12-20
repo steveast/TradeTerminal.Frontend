@@ -1,75 +1,274 @@
 'use client';
 
-import * as React from 'react';
-import { Observable } from 'rxjs';
-import { SciChartReact, TResolvedReturnType } from 'scichart-react';
-import { simpleBinanceRestClient, TPriceBar } from '../vendor/binance/binanceRestClient';
-import { binanceSocketClient, TRealtimePriceBar } from '../vendor/binance/binanceSocketClient';
-import { createCandlestickChart } from '../vendor/chat/createCandlestickChart';
+import React, { useCallback, useRef } from 'react';
+import {
+  SciChartReact,
+  TResolvedReturnType,
+} from 'scichart-react';
+import {
+  simpleBinanceRestClient,
+  TPriceBar,
+} from '../vendor/binance/binanceRestClient';
+import {
+  binanceSocketClient,
+  TRealtimePriceBar,
+} from '../vendor/binance/binanceSocketClient';
+import { createCandlestickChart } from '../vendor/chart/createCandlestickChart';
+import {
+  SciChartSurface,
+  HorizontalLineAnnotation,
+  BoxAnnotation,
+  ECoordinateMode,
+  EAnnotationLayer,
+  NumericAxis,
+} from 'scichart';
 
-
-export const collectData = () => async (rootElement: string | HTMLDivElement) => {
-  const { sciChartSurface, controls } = await createCandlestickChart(rootElement);
-  const timeframe = '4h';
-  const limit = 1000;
-  const endDate = new Date(Date.now());
-  const startDate = new Date();
-  startDate.setHours(endDate.getHours() - limit);
-
-  const priceBars: TPriceBar[] = await simpleBinanceRestClient.getCandles(
-    'BTCUSDT',
-    timeframe,
-    startDate,
-    endDate,
-    limit,
-    'com'
-  );
-  // Set the candles data on the chart
-  controls.setData('BTC/USDT', priceBars);
-
-  const startViewportRange = new Date();
-  startViewportRange.setHours(endDate.getHours() - 200);
-  endDate.setHours(endDate.getHours() + 20);
-  controls.setXRange(startViewportRange, endDate);
-
-  const obs: Observable<TRealtimePriceBar> = binanceSocketClient.getRealtimeCandleStream(
-    'BTCUSDT',
-    timeframe
-  );
-  const subscription = obs.subscribe((pb) => {
-    const priceBar = {
-      date: pb.openTime,
-      open: pb.open,
-      high: pb.high,
-      low: pb.low,
-      close: pb.close,
-      volume: pb.volume,
-    };
-    controls.onNewTrade(priceBar);
-  });
-
-  return { sciChartSurface, subscription, controls };
-};
-
+const SYMBOL = 'BTCUSDT';
+const TIMEFRAME = '4h';
+const INITIAL_LIMIT = 1000;
+const VISIBLE_HOURS = 200;
 
 export default function Chart() {
-  const initFunc = collectData();
+  const entryAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
+  const stopAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
+  const zoneAnnotationRef = useRef<BoxAnnotation | null>(null);
+
+  const isDraggingRef = useRef(false);
+  const entryPriceRef = useRef<number | null>(null);
+
+  const initChart = useCallback(async (rootElement: HTMLDivElement) => {
+    const { sciChartSurface, controls } = await createCandlestickChart(rootElement);
+
+    const yAxis = sciChartSurface.yAxes.get(0) as NumericAxis;
+
+    // === Загрузка исторических данных ===
+    const endDate = new Date();
+    const startDate = new Date(endDate);
+    startDate.setHours(endDate.getHours() - INITIAL_LIMIT);
+
+    const priceBars: TPriceBar[] = await simpleBinanceRestClient.getCandles(
+      SYMBOL,
+      TIMEFRAME,
+      startDate,
+      endDate,
+      INITIAL_LIMIT,
+      'com'
+    );
+
+    controls.setData(`${SYMBOL.replace('USDT', '/USDT')}`, priceBars);
+
+    const visibleStart = new Date(endDate);
+    visibleStart.setHours(endDate.getHours() - VISIBLE_HOURS);
+    const visibleEnd = new Date(endDate);
+    visibleEnd.setHours(endDate.getHours() + 20);
+
+    controls.setXRange(visibleStart, visibleEnd);
+
+    // === Реал-тайм обновления ===
+    const realtimeObservable = binanceSocketClient.getRealtimeCandleStream(SYMBOL, TIMEFRAME);
+
+    const subscription = realtimeObservable.subscribe((realtimeBar: TRealtimePriceBar) => {
+      const priceBar = {
+        date: realtimeBar.openTime,
+        open: realtimeBar.open,
+        high: realtimeBar.high,
+        low: realtimeBar.low,
+        close: realtimeBar.close,
+        volume: realtimeBar.volume,
+      };
+      controls.onNewTrade(priceBar);
+    });
+
+    // === Ждём первый рендер ===
+    await sciChartSurface.zoomExtents();
+
+    // === Аннотации ===
+    const clearAnnotations = () => {
+      [entryAnnotationRef, stopAnnotationRef, zoneAnnotationRef].forEach((ref) => {
+        if (ref.current) {
+          sciChartSurface.annotations.remove(ref.current);
+          ref.current = null;
+        }
+      });
+    };
+
+    const createHorizontalLine = (price: number, label: string, color: string, isDashed = false) => {
+      return new HorizontalLineAnnotation({
+        y1: price,
+        stroke: `${color}CC`, // полупрозрачный
+        strokeThickness: 1,
+        strokeDashArray: isDashed ? [6, 4] : undefined,
+        showLabel: true,
+        labelPlacement: 'TopLeft',
+        labelValue: `${label}: ${price.toFixed(2)}`,
+        labelBackground: `${color}B3`,
+        labelForeground: '#ffffffE6',
+        isEditable: false,
+        annotationLayer: EAnnotationLayer.BelowChart,
+      });
+    };
+
+    const createZone = (entry: number, stop: number) => {
+      const isLong = entry > stop;
+      return new BoxAnnotation({
+        x1: 0,
+        x2: 1,
+        y1: Math.min(entry, stop),
+        y2: Math.max(entry, stop),
+        coordinateMode: ECoordinateMode.RelativeX,
+        fill: isLong ? 'rgba(0, 255, 0, 0.25)' : 'rgba(255, 0, 0, 0.25)',
+        strokeThickness: 0,
+        isEditable: false,
+        annotationLayer: EAnnotationLayer.BelowChart,
+      });
+    };
+
+    const updateAnnotations = (entry: number, current: number) => {
+      clearAnnotations();
+
+      const entryLine = createHorizontalLine(entry, 'Entry', '#00ff00');
+      const stopLine = createHorizontalLine(current, 'Stop Loss', '#ff0000', true);
+
+      sciChartSurface.annotations.add(entryLine);
+      sciChartSurface.annotations.add(stopLine);
+
+      const zone = createZone(entry, current);
+      sciChartSurface.annotations.add(zone);
+
+      entryAnnotationRef.current = entryLine;
+      stopAnnotationRef.current = stopLine;
+      zoneAnnotationRef.current = zone;
+    };
+
+    // === ПРАВАЯ КНОПКА МЫШИ (на canvas для точности) ===
+    const canvas = sciChartSurface.domCanvas2D;
+    if (!canvas) {
+      console.error('Canvas not found');
+      return { sciChartSurface, subscription, controls };
+    }
+
+    const getPriceFromEvent = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+
+      // 1. Получаем физические пиксели (с учетом DPI)
+      const pixelRatio = window.devicePixelRatio || 1;
+      const canvasX = (e.clientX - rect.left) * pixelRatio;
+      const canvasY = (e.clientY - rect.top) * pixelRatio;
+
+      // 2. Получаем область отрисовки (SeriesViewRect)
+      const viewRect = sciChartSurface.seriesViewRect;
+
+      // 3. Вычисляем Y относительно области данных
+      // Важно: CoordinateCalculator в 4.x работает с физическими пикселями
+      const yInViewRect = canvasY - viewRect.top;
+
+      return yAxis.getCurrentCoordinateCalculator().getDataValue(yInViewRect);
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 2) { return; }
+      e.preventDefault();
+
+      const price = getPriceFromEvent(e);
+      entryPriceRef.current = price;
+      isDraggingRef.current = true;
+
+      // Очищаем старое, если было
+      clearAnnotations();
+
+      // Инициализируем аннотации сразу. 
+      // На момент нажатия Stop Loss равен Entry (нулевая зона)
+      updateAnnotations(price, price);
+
+      console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(2));
+    };
+
+    // Внутри onMouseMove
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current || entryPriceRef.current === null) { return; }
+
+      const currentPrice = getPriceFromEvent(e);
+      updateAnnotations(entryPriceRef.current, currentPrice);
+    };
+
+    const onMouseUpOrLeave = () => {
+      if (isDraggingRef.current && entryPriceRef.current !== null) {
+        const finalStop = stopAnnotationRef.current?.y1 as number | undefined;
+        if (finalStop !== undefined) {
+          console.log('=== ПОЗИЦИЯ ГОТОВА ===');
+          console.log('Entry:', entryPriceRef.current.toFixed(2));
+          console.log('Stop Loss:', finalStop.toFixed(2));
+          console.log('Направление:', entryPriceRef.current > finalStop ? 'LONG' : 'SHORT');
+          console.log('Риск:', Math.abs(entryPriceRef.current - finalStop).toFixed(2));
+        }
+      }
+      isDraggingRef.current = false;
+    };
+
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      return false;
+    };
+
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUpOrLeave);
+    canvas.addEventListener('mouseleave', onMouseUpOrLeave);
+    canvas.addEventListener('contextmenu', onContextMenu);
+
+    const cleanupMouse = () => {
+      canvas.removeEventListener('mousedown', onMouseDown);
+      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mouseup', onMouseUpOrLeave);
+      canvas.removeEventListener('mouseleave', onMouseUpOrLeave);
+      canvas.removeEventListener('contextmenu', onContextMenu);
+      clearAnnotations();
+    };
+
+    return {
+      sciChartSurface,
+      subscription,
+      controls,
+      cleanup: cleanupMouse,
+    };
+  }, []);
 
   return (
-    <div style={{ height: '100vh', display: 'flex' }}>
+    <div style={{ height: '100vh', display: 'flex', position: 'relative' }}>
       <SciChartReact
-        key="key"
-        initChart={initFunc}
-        onInit={(initResult: TResolvedReturnType<typeof initFunc>) => {
-          const { subscription } = initResult;
+        initChart={initChart}
+        onInit={(initResult: TResolvedReturnType<typeof initChart>) => {
+          const { subscription, cleanup } = initResult;
 
           return () => {
             subscription.unsubscribe();
+            cleanup?.();
           };
         }}
-        style={{ display: 'flex', flexDirection: 'column', width: '75vw', flex: 'auto' }}
-        innerContainerProps={{ style: { flexBasis: '80%', flexGrow: 1, flexShrink: 1 } }}
+        style={{ flex: 'auto', width: '75vw' }}
+        innerContainerProps={{ style: { flexGrow: 1 } }}
       />
+
+      <div
+        style={{
+          position: 'absolute',
+          top: 16,
+          left: 16,
+          background: 'rgba(0,0,0,0.8)',
+          color: '#fff',
+          padding: '12px 16px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}
+      >
+        <strong>Торговля:</strong><br />
+        Правая кнопка мыши + drag — лимит + стоп<br />
+        • Зелёная — Entry<br />
+        • Красная пунктирная — Stop Loss<br />
+        • Зона — риск позиции
+      </div>
     </div>
   );
 }

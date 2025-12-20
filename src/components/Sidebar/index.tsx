@@ -1,19 +1,10 @@
 import { useModels } from '@app/models';
 import { IconChessQueen, IconFishHook } from '@tabler/icons-react';
-import { Button, Tabs } from '@mantine/core';
-import { useEffect } from 'react';
-import { useBinanceWS } from '../exchanges/useBinanceWS';
+import { Tabs } from '@mantine/core';
+import StopOneStrategy from './StopOneStrategy';
 
 export function Sidebar() {
   const { terminalModel } = useModels();
-  const {
-    candle,
-    positions,
-    status,
-    currentSymbol,
-    marketBuy,
-    connected,
-  } = useBinanceWS();
 
   return (
     <Tabs
@@ -25,26 +16,15 @@ export function Sidebar() {
     >
       <Tabs.List>
         <Tabs.Tab value="stopOne" leftSection={<IconChessQueen size={14} />}>
-          Stop one
+          Stop one strategy
         </Tabs.Tab>
         <Tabs.Tab value="squeeze" leftSection={<IconFishHook size={14} />}>
-          Squeeze catcher
+          Squeeze catcher strategy
         </Tabs.Tab>
       </Tabs.List>
 
       <Tabs.Panel value="stopOne">
-        <div className="p-8">
-          <h1>Binance Futures</h1>
-          <p>Статус: {connected ? '✅ Подключено' : '❌ Отключено'} | {status}</p>
-          <p>Тикер: {currentSymbol}</p>
-
-          <Button onClick={() => marketBuy(200)}>
-            Buy 200
-          </Button>
-
-          <pre>Последняя свеча: {candle ? candle.close : '—'}</pre>
-          <p>Позиций: {positions.length}</p>
-        </div>
+        <StopOneStrategy />
       </Tabs.Panel>
 
       <Tabs.Panel value="squeeze">Squeeze catcher</Tabs.Panel>
