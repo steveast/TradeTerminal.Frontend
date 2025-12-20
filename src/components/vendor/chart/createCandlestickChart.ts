@@ -114,7 +114,7 @@ export const createCandlestickChart = async (rootElement: string | HTMLDivElemen
   // Optional: Add some interactivity modifiers
   sciChartSurface.chartModifiers.add(
     new ZoomExtentsModifier(),
-    new ZoomPanModifier({ enableZoom: true }),
+    // new ZoomPanModifier({ enableZoom: true }),
     new MouseWheelZoomModifier(),
     new PinchZoomModifier(),
     new CursorModifier({
