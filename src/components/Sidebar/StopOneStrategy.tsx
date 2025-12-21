@@ -15,13 +15,14 @@ function StopOneStrategy() {
           { value: model.deposit * 0.66 },
           { value: model.deposit * 0.8, label: '80%' },
         ]}
-        max={model.deposit}
+        domain={[0, model.deposit]}
+        max={model.strategy.usdAmount}
         mb="md"
         radius="xs"
         size="sm"
         value={model.strategy.usdAmount}
         onChange={(usdAmount) => {
-          model.strategy.usdAmount = usdAmount;
+          model.modifyStrategy({ usdAmount })
         }}
       />
 

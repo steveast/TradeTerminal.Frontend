@@ -24,6 +24,7 @@ import {
 } from 'scichart';
 import { observer } from 'mobx-react-lite';
 import { useModels } from '@app/models';
+import { calcPercentsFromEntry } from '@app/utils/calcPercentsFromEntry';
 
 const SYMBOL = 'BTCUSDT';
 const TIMEFRAME = '4h';
@@ -124,17 +125,52 @@ function Chart() {
 
       if (!isStop) {
         if (isLong) {
-          labelPlacement = ELabelPlacement.TopLeft;
+          labelPlacement = ELabelPlacement.TopRight;
         } else {
-          labelPlacement = ELabelPlacement.BottomLeft;
+          labelPlacement = ELabelPlacement.BottomRight;
         }
       }
       if (isStop) {
         if (isLong) {
-          labelPlacement = ELabelPlacement.BottomLeft;
+          labelPlacement = ELabelPlacement.BottomRight;
         } else {
-          labelPlacement = ELabelPlacement.TopLeft;
+          labelPlacement = ELabelPlacement.TopRight;
         }
+      }
+      const getLabelValue = () => {
+        let result = '';
+
+        if (isEntry) {
+          if (isLong) {
+            result += 'Long';
+          } else {
+            result += 'Short';
+          }
+        } else {
+          result = label;
+        }
+
+        result += `: ${price.toFixed(2)}`;
+        result += isEntry ? ` 1:${ratio}` : '';
+
+        if (isStop) {
+          const { stop } = calcPercentsFromEntry(
+            entryPriceRef.current!,
+            price,
+            price
+          );
+          result += ` ${stop}%`;
+        }
+        if (isTake) {
+          const { takeProfit } = calcPercentsFromEntry(
+            entryPriceRef.current!,
+            price,
+            price
+          );
+          result += ` ${takeProfit}%`;
+        }
+
+        return result;
       }
 
       return new HorizontalLineAnnotation({
@@ -145,7 +181,7 @@ function Chart() {
         showLabel: true,
         labelPlacement,
         axisFontSize: 12,
-        labelValue: `${isEntry && (isLong ? 'Long' : 'Short') || label}: ${price.toFixed(2)}${isEntry ? ` 1:${ratio}` : ''}`,
+        labelValue: getLabelValue(),
         axisLabelFill: `${color}80`,
         isEditable: true,
         annotationLayer: EAnnotationLayer.BelowChart,
@@ -195,6 +231,7 @@ function Chart() {
         const newStop = stopLine.y1 as number;
         const newTp = takeProfitLine.y1 as number;
         const isLong = newEntry > newStop;
+        const pc = calcPercentsFromEntry(newEntry, newStop, newTp);
         // const newTp = newEntry + (newEntry - newStop) * ratio;
 
         // Обновляем TP
@@ -217,8 +254,8 @@ function Chart() {
 
         // Можно обновить лейблы entry/stop если нужно
         entryLine.labelValue = `${isLong ? 'Long' : 'Short'}: ${newEntry.toFixed(2)} ${ratioString}`;
-        stopLine.labelValue = `Stop Loss: ${newStop.toFixed(2)}`;
-        takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(2)}`;
+        stopLine.labelValue = `Stop Loss: ${newStop.toFixed(2)} ${pc.stop}`;
+        takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(2)} ${pc.takeProfit}`;
 
         model.setStrategy({
           positionSide: positionDirectionRef.current!,

@@ -188,4 +188,14 @@ export class TerminalModel implements ITerminalModel {
       ...payload,
     };
   }
+
+  @action.bound
+  public modifyStrategy(payload: Partial<IStrategy>) {
+    runInAction(() => {
+      this.strategy = {
+        ...this.strategy,
+        ...payload,
+      };
+    });
+  }
 }
