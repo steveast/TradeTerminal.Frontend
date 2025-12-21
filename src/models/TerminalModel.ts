@@ -178,8 +178,8 @@ export class TerminalModel implements ITerminalModel {
       Math.abs(payload.entryPrice - payload.stopLoss) /
       payload.entryPrice *
       100;
-
-    const usdAmount = riskSum / (stopPercent / 100);
+    const amount = Math.floor(riskSum / (stopPercent / 100));
+    const usdAmount = amount >= this.deposit ? this.deposit : amount;
 
     this.strategy = {
       symbol: this.symbol,

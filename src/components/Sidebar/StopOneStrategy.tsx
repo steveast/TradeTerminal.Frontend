@@ -40,6 +40,7 @@ function StopOneStrategy() {
         radius="xs"
         size="xs"
         variant="filled"
+        value={model.strategy.stopLoss}
       />
 
       <TextInput
@@ -48,6 +49,7 @@ function StopOneStrategy() {
         radius="xs"
         size="xs"
         variant="filled"
+        value={model.strategy.takeProfit}
       />
 
       <Button
@@ -55,6 +57,9 @@ function StopOneStrategy() {
         radius="xs"
         size="xs"
         variant="filled"
+        onClick={() => {
+
+        }}
       >
         Create strategy
       </Button>

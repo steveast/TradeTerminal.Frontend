@@ -220,6 +220,13 @@ function Chart() {
         stopLine.labelValue = `Stop Loss: ${newStop.toFixed(2)}`;
         takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(2)}`;
 
+        model.setStrategy({
+          positionSide: positionDirectionRef.current!,
+          entryPrice: parseFloat(newEntry.toFixed(2)),
+          stopLoss: parseFloat(newStop.toFixed(2)),
+          takeProfit: parseFloat(newTp.toFixed(2)),
+        });
+
         // Перерисовка (не обязательно, SciChart обычно сам обновляет)
         sciChartSurface.invalidateElement();
       };
@@ -368,7 +375,7 @@ function Chart() {
             entryPrice: parseFloat(finalEntry.toFixed(2)),
             stopLoss: parseFloat(finalStop.toFixed(2)),
             takeProfit: parseFloat(finalTp.toFixed(2)),
-          })
+          });
         }
       }
 
