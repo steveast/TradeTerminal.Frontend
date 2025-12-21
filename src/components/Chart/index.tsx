@@ -30,6 +30,10 @@ const INITIAL_LIMIT = 1000;
 const VISIBLE_HOURS = 200;
 
 export default function Chart() {
+  const colorLong = '#00ff00';
+  const colorShort = '#ff0000';
+  const colorTake = '#d4ff00';
+  const ratio = 3;
   const entryAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const stopAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const takeProfitAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
@@ -94,8 +98,12 @@ export default function Chart() {
       });
     };
 
-    const createHorizontalLine = (price: number, label: string, color: string, isDashed = false, entry: number, stop: number, isStop: boolean) => {
+    const createHorizontalLine = (price: number, label: string, entry: number, stop: number) => {
       const isLong = entry > stop;
+      const isEntry = label === 'Entry';
+      const isStop = label === 'Stop Loss';
+      const isTake = label === 'Take profit';
+      const color = isEntry ? colorLong : (isStop ? colorShort : colorTake);
       let labelPlacement;
 
       if (!isStop) {
@@ -117,13 +125,13 @@ export default function Chart() {
         y1: price,
         stroke: `${color}CC`,
         strokeThickness: 1,
-        strokeDashArray: isDashed ? [6, 4] : undefined,
+        strokeDashArray: isStop ? [4, 2] : (isTake ? [2, 2] : undefined),
         showLabel: true,
         labelPlacement,
         axisFontSize: 12,
-        labelValue: `${label}: ${price.toFixed(2)}`,
+        labelValue: `${isEntry && (isLong ? 'Long' : 'Short') || label}: ${price.toFixed(2)}${isEntry ? ` 1:${ratio}` : ''}`,
         axisLabelFill: `${color}80`,
-        isEditable: false,
+        isEditable: true,
         annotationLayer: EAnnotationLayer.BelowChart,
       });
     };
@@ -145,11 +153,11 @@ export default function Chart() {
 
     const updateAnnotations = (entry: number, current: number) => {
       clearAnnotations();
-      const tpPrice = entry + (entry - current) * 3;
+      const tpPrice = entry + (entry - current) * ratio;
 
-      const entryLine = createHorizontalLine(entry, 'Entry', '#00ff00', false, entry, current, false);
-      const stopLine = createHorizontalLine(current, 'Stop Loss', '#ff0000', true, entry, current, true);
-      const takeProfitLine = createHorizontalLine(tpPrice, 'Take profit', '#d4ff00', true, entry, current, false);
+      const entryLine = createHorizontalLine(entry, 'Entry', entry, current);
+      const stopLine = createHorizontalLine(current, 'Stop Loss', entry, current);
+      const takeProfitLine = createHorizontalLine(tpPrice, 'Take profit', entry, current);
 
       sciChartSurface.annotations.add(entryLine);
       sciChartSurface.annotations.add(stopLine);
@@ -162,6 +170,46 @@ export default function Chart() {
       stopAnnotationRef.current = stopLine;
       takeProfitAnnotationRef.current = takeProfitLine;
       zoneAnnotationRef.current = zone;
+
+      // === Подписка на перетаскивание ===
+      const recalculateAll = () => {
+        const newEntry = entryLine.y1 as number;
+        const newStop = stopLine.y1 as number;
+        const newTp = takeProfitLine.y1 as number;
+        const isLong = newEntry > newStop;
+        // const newTp = newEntry + (newEntry - newStop) * ratio;
+
+        // Обновляем TP
+        // takeProfitLine.y1 = newTp;
+        // takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(2)}`;
+
+        // === Расчёт соотношения ===
+        const risk = Math.abs(newEntry - newStop);
+        const reward = Math.abs(newTp - newEntry);
+
+        let ratioString = 'N/A';
+        if (risk > 0) {
+          const ratio = reward / risk;
+          ratioString = `1:${ratio.toFixed(1)}`;
+        }
+
+        // Обновляем зону
+        zone.y1 = Math.min(newEntry, newStop);
+        zone.y2 = Math.max(newEntry, newStop);
+
+        // Можно обновить лейблы entry/stop если нужно
+        entryLine.labelValue = `${isLong ? 'Long' : 'Short'}: ${newEntry.toFixed(2)} ${ratioString}`;
+        stopLine.labelValue = `Stop Loss: ${newStop.toFixed(2)}`;
+        takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(2)}`;
+
+        // Перерисовка (не обязательно, SciChart обычно сам обновляет)
+        sciChartSurface.invalidateElement();
+      };
+
+      // Подписываемся на dragEnded (лучше, чем на каждое delta — меньше перерисовок)
+      entryLine.dragDelta.subscribe(recalculateAll);
+      stopLine.dragDelta.subscribe(recalculateAll);
+      takeProfitLine.dragDelta.subscribe(recalculateAll);
     };
 
     // === ПРАВАЯ КНОПКА МЫШИ (на canvas для точности) ===
