@@ -278,27 +278,6 @@ export default function Chart() {
         style={{ flex: 'auto', width: '75vw' }}
         innerContainerProps={{ style: { flexGrow: 1 } }}
       />
-
-      <div
-        style={{
-          position: 'absolute',
-          top: 16,
-          left: 16,
-          background: 'rgba(0,0,0,0.8)',
-          color: '#fff',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          fontSize: '14px',
-          pointerEvents: 'none',
-          zIndex: 10,
-        }}
-      >
-        <strong>Торговля:</strong><br />
-        Правая кнопка мыши + drag — лимит + стоп<br />
-        • Зелёная — Entry<br />
-        • Красная пунктирная — Stop Loss<br />
-        • Зона — риск позиции
-      </div>
     </div>
   );
 }
