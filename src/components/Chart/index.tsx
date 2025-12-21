@@ -150,7 +150,7 @@ function Chart() {
           result = label;
         }
 
-        result += `: ${price.toFixed(model.tickSize)}`;
+        result += `: ${price.toFixed(model.symbolInfo.tickSize)}`;
         result += isEntry ? ` 1:${ratio}` : '';
 
         if (isStop) {
@@ -236,7 +236,7 @@ function Chart() {
 
         // Обновляем TP
         // takeProfitLine.y1 = newTp;
-        // takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(model.tickSize)}`;
+        // takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(model.symbolInfo.tickSize)}`;
 
         // === Расчёт соотношения ===
         const risk = Math.abs(newEntry - newStop);
@@ -253,15 +253,15 @@ function Chart() {
         zone.y2 = Math.max(newEntry, newStop);
 
         // Можно обновить лейблы entry/stop если нужно
-        entryLine.labelValue = `${isLong ? 'Long' : 'Short'}: ${newEntry.toFixed(model.tickSize)} ${ratioString}`;
-        stopLine.labelValue = `Stop Loss: ${newStop.toFixed(model.tickSize)} ${pc.stop}%`;
-        takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(model.tickSize)} ${pc.takeProfit}%`;
+        entryLine.labelValue = `${isLong ? 'Long' : 'Short'}: ${newEntry.toFixed(model.symbolInfo.tickSize)} ${ratioString}`;
+        stopLine.labelValue = `Stop Loss: ${newStop.toFixed(model.symbolInfo.tickSize)} ${pc.stop}%`;
+        takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(model.symbolInfo.tickSize)} ${pc.takeProfit}%`;
 
         model.setStrategy({
           positionSide: positionDirectionRef.current!,
-          entryPrice: parseFloat(newEntry.toFixed(model.tickSize)),
-          stopLoss: parseFloat(newStop.toFixed(model.tickSize)),
-          takeProfit: parseFloat(newTp.toFixed(model.tickSize)),
+          entryPrice: parseFloat(newEntry.toFixed(model.symbolInfo.tickSize)),
+          stopLoss: parseFloat(newStop.toFixed(model.symbolInfo.tickSize)),
+          takeProfit: parseFloat(newTp.toFixed(model.symbolInfo.tickSize)),
         });
 
         // Перерисовка (не обязательно, SciChart обычно сам обновляет)
@@ -363,7 +363,7 @@ function Chart() {
       // На момент нажатия Stop Loss равен Entry (нулевая зона)
       updateAnnotations(price, price);
 
-      console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(model.tickSize));
+      console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(model.symbolInfo.tickSize));
     };
 
     // Внутри onMouseMove
@@ -403,15 +403,15 @@ function Chart() {
 
           console.log('=== ПОЗИЦИЯ СОЗДАНА ===');
           console.log('Направление:', positionDirectionRef.current);
-          console.log('Entry:', finalEntry.toFixed(model.tickSize));
-          console.log('Stop Loss:', finalStop.toFixed(model.tickSize));
-          console.log('Take profit:', finalTp.toFixed(model.tickSize));
-          console.log('Риск:', Math.abs(finalEntry - finalStop).toFixed(model.tickSize));
+          console.log('Entry:', finalEntry.toFixed(model.symbolInfo.tickSize));
+          console.log('Stop Loss:', finalStop.toFixed(model.symbolInfo.tickSize));
+          console.log('Take profit:', finalTp.toFixed(model.symbolInfo.tickSize));
+          console.log('Риск:', Math.abs(finalEntry - finalStop).toFixed(model.symbolInfo.tickSize));
           model.setStrategy({
             positionSide: positionDirectionRef.current,
-            entryPrice: parseFloat(finalEntry.toFixed(model.tickSize)),
-            stopLoss: parseFloat(finalStop.toFixed(model.tickSize)),
-            takeProfit: parseFloat(finalTp.toFixed(model.tickSize)),
+            entryPrice: parseFloat(finalEntry.toFixed(model.symbolInfo.tickSize)),
+            stopLoss: parseFloat(finalStop.toFixed(model.symbolInfo.tickSize)),
+            takeProfit: parseFloat(finalTp.toFixed(model.symbolInfo.tickSize)),
           });
         }
       }

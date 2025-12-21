@@ -7,3 +7,10 @@ export interface IStrategy {
   takeProfit: number;
   usdAmount: number;
 }
+
+export interface ISymbolInfo {
+  minQty: number;
+  precision: number;
+  stepSize: number;
+  tickSize: number;
+}

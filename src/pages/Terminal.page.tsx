@@ -1,8 +1,19 @@
 import Chart from '@app/components/Chart';
 import { Sidebar } from '@app/components/Sidebar';
+import { useModels } from '@app/models';
 import { Group } from '@mantine/core';
+import { observer } from 'mobx-react-lite';
+import { useEffect } from 'react';
 
-export const Terminal = () => {
+const Terminal = () => {
+  const { terminalModel: model } = useModels();
+
+  useEffect(() => {
+    if (model.connected) {
+      model.getSymbolInfo();
+    }
+  }, [model.connected])
+
   return (
     <Group gap={0} align="top">
       <Chart />
@@ -10,3 +21,5 @@ export const Terminal = () => {
     </Group>
   );
 }
+
+export default observer(Terminal);

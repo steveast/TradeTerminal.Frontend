@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { Terminal } from './pages/Terminal.page';
+import Terminal from './pages/Terminal.page';
 
 const router = createBrowserRouter([
   {

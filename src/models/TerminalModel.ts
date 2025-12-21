@@ -1,4 +1,4 @@
-import { IStrategy } from '@app/types/trade';
+import { IStrategy, ISymbolInfo } from '@app/types/trade';
 import { TMessage } from '@app/types/ws';
 import { LS } from '@app/utils/storage';
 import { observable, makeObservable, action, runInAction, reaction, toJS } from 'mobx';
@@ -14,6 +14,7 @@ interface ITerminalModel {
   leverage: number;
   strategy: IStrategy;
   symbol: string;
+  symbolInfo: ISymbolInfo;
 }
 
 export class TerminalModel implements ITerminalModel {
@@ -26,7 +27,13 @@ export class TerminalModel implements ITerminalModel {
   @observable deposit: number = 1000;
   @observable leverage: number = 10;
   @observable available: number = this.deposit * this.leverage;
-  @observable tickSize: number = 1;
+
+  @observable symbolInfo: ISymbolInfo = {
+    minQty: 100,
+    precision: 1,
+    stepSize: 0.1,
+    tickSize: 1,
+  };
 
   @observable strategy: IStrategy = {
     entryPrice: this.currentPrice,
@@ -87,6 +94,9 @@ export class TerminalModel implements ITerminalModel {
             case 'strategy':
               console.log(data);
               break;
+            case 'symbolInfo':
+              this.symbolInfo = data;
+              break;
             case 'orderResult':
             case 'closeResult':
               console.log('Результат команды:', data);
@@ -125,6 +135,15 @@ export class TerminalModel implements ITerminalModel {
     } else {
       console.warn('WS не подключён — сообщение не отправлено');
     }
+  }
+
+  public getSymbolInfo() {
+    this.send({
+      type: 'symbolInfo',
+      payload: {
+        symbol: this.symbol,
+      },
+    });
   }
 
   public marketBuy(usdAmount: number) {
