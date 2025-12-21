@@ -14,3 +14,14 @@ export interface ISymbolInfo {
   stepSize: number;
   tickSize: number;
 }
+
+export interface IPosition {
+  entryOrderId: string;
+  entryPrice: number;
+  positionSide: 'LONG' | 'SHORT';
+  quantity: string; // "0.083"
+  slAlgoId: number;
+  stopLoss: number;
+  takeProfit: number;
+  tpAlgoId: number;
+}

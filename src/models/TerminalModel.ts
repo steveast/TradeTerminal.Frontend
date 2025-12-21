@@ -1,4 +1,4 @@
-import { IStrategy, ISymbolInfo } from '@app/types/trade';
+import { IPosition, IStrategy, ISymbolInfo } from '@app/types/trade';
 import { TMessage } from '@app/types/ws';
 import { LS } from '@app/utils/storage';
 import { observable, makeObservable, action, runInAction, reaction, toJS } from 'mobx';
@@ -12,6 +12,7 @@ interface ITerminalModel {
   deposit: number;
   hasPosition: boolean;
   leverage: number;
+  positions: IPosition[];
   strategy: IStrategy;
   symbol: string;
   symbolInfo: ISymbolInfo;
@@ -27,6 +28,7 @@ export class TerminalModel implements ITerminalModel {
   @observable deposit: number = 1000;
   @observable leverage: number = 10;
   @observable available: number = this.deposit * this.leverage;
+  @observable positions: IPosition[] = [];
 
   @observable symbolInfo: ISymbolInfo = {
     minQty: 100,
@@ -83,7 +85,8 @@ export class TerminalModel implements ITerminalModel {
               //setCandle(msg.data);
               break;
             case 'positions':
-              //setPositions(msg.data);
+              this.positions = data;
+              console.log(data);
               break;
             case 'status':
               break;
