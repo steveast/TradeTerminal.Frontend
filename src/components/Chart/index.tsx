@@ -21,6 +21,7 @@ import {
   ECoordinateMode,
   EAnnotationLayer,
   NumericAxis,
+  ELabelPlacement,
 } from 'scichart';
 
 const SYMBOL = 'BTCUSDT';
@@ -92,31 +93,46 @@ export default function Chart() {
       });
     };
 
-    const createHorizontalLine = (price: number, label: string, color: string, isDashed = false) => {
+    const createHorizontalLine = (price: number, label: string, color: string, isDashed = false, entry: number, stop: number, isStop: boolean) => {
+      const isLong = entry > stop;
+      let labelPlacement;
+      if (!isStop) {
+        if (isLong) {
+          labelPlacement = ELabelPlacement.TopLeft;
+        } else {
+          labelPlacement = ELabelPlacement.BottomLeft;
+        }
+      }
+      if (isStop) {
+        if (isLong) {
+          labelPlacement = ELabelPlacement.BottomLeft;
+        } else {
+          labelPlacement = ELabelPlacement.TopLeft;
+        }
+      }
+
       return new HorizontalLineAnnotation({
         y1: price,
         stroke: `${color}CC`, // полупрозрачный
         strokeThickness: 1,
         strokeDashArray: isDashed ? [6, 4] : undefined,
         showLabel: true,
-        labelPlacement: 'TopLeft',
+        labelPlacement,
         labelValue: `${label}: ${price.toFixed(2)}`,
-        labelBackground: `${color}B3`,
-        labelForeground: '#ffffffE6',
         isEditable: false,
         annotationLayer: EAnnotationLayer.BelowChart,
       });
     };
 
     const createZone = (entry: number, stop: number) => {
-      const isLong = entry > stop;
       return new BoxAnnotation({
         x1: 0,
         x2: 1,
         y1: Math.min(entry, stop),
         y2: Math.max(entry, stop),
-        coordinateMode: ECoordinateMode.RelativeX,
-        fill: isLong ? 'rgba(0, 255, 0, 0.25)' : 'rgba(255, 0, 0, 0.25)',
+        xCoordinateMode: ECoordinateMode.Relative,
+        yCoordinateMode: ECoordinateMode.DataValue,
+        fill: 'rgba(255, 0, 0, 0.05)',
         strokeThickness: 0,
         isEditable: false,
         annotationLayer: EAnnotationLayer.BelowChart,
@@ -126,8 +142,8 @@ export default function Chart() {
     const updateAnnotations = (entry: number, current: number) => {
       clearAnnotations();
 
-      const entryLine = createHorizontalLine(entry, 'Entry', '#00ff00');
-      const stopLine = createHorizontalLine(current, 'Stop Loss', '#ff0000', true);
+      const entryLine = createHorizontalLine(entry, 'Entry', '#00ff00', false, entry, current, false);
+      const stopLine = createHorizontalLine(current, 'Stop Loss', '#ff0000', true, entry, current, true);
 
       sciChartSurface.annotations.add(entryLine);
       sciChartSurface.annotations.add(stopLine);
