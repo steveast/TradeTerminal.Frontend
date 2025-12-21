@@ -7,33 +7,33 @@ const binanceDomain = 'com';
 //       IF USING IN PRODUCTION, USE A FULL OR OFFICIAL BINANCE / EXCHANGE LIBRARY
 
 export type TRealtimePriceBar = {
-  symbol: string;
-  interval: string;
-  eventTime: number;
-  openTime: number;
-  open: number;
-  high: number;
-  low: number;
   close: number;
-  volume: number; // Total volume
   closeTime: number;
-  lastTradeSize: number; // Last trade size
+  eventTime: number;
+  high: number;
+  interval: string;
   lastTradeBuyOrSell: boolean; // When true, buy, else sell
+  lastTradeSize: number; // Last trade size
+  low: number;
+  open: number;
+  openTime: number;
+  symbol: string;
+  volume: number; // Total volume
 };
 
 export type TTrade = {
   eventTime: number;
-  symbol: string;
+  isBuyerMaker: boolean;
+  maker: boolean;
   price: number;
   quantity: number;
-  maker: boolean;
-  isBuyerMaker: boolean;
+  symbol: string;
   tradeId: number;
 };
 
 export const tradeToCandle = (
   candle: TRealtimePriceBar,
-  curr: { trade: TTrade; firstCandle: TRealtimePriceBar }
+  curr: { firstCandle: TRealtimePriceBar; trade: TTrade; }
 ): TRealtimePriceBar => {
   candle = candle ?? curr.firstCandle;
   const trade = curr.trade;

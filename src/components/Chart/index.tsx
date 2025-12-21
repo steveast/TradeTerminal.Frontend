@@ -15,7 +15,6 @@ import {
 } from '../vendor/binance/binanceSocketClient';
 import { createCandlestickChart } from '../vendor/chart/createCandlestickChart';
 import {
-  SciChartSurface,
   HorizontalLineAnnotation,
   BoxAnnotation,
   ECoordinateMode,
@@ -23,14 +22,16 @@ import {
   NumericAxis,
   ELabelPlacement,
 } from 'scichart';
+import { observer } from 'mobx-react-lite';
+import { useModels } from '@app/models';
 
 const SYMBOL = 'BTCUSDT';
 const TIMEFRAME = '4h';
 const INITIAL_LIMIT = 1000;
 const VISIBLE_HOURS = 200;
 
-export default function Chart() {
-  const isPositionExist = false;
+function Chart() {
+  const { terminalModel: model } = useModels();
 
   const colorLong = '#00ff00';
   const colorShort = '#ff0000';
@@ -45,11 +46,15 @@ export default function Chart() {
   const isDraggingRef = useRef(false);
   const entryPriceRef = useRef<number | null>(null);
   const currentPriceRef = useRef<number>(0);
-  const positionDirectionRef = useRef<'long' | 'short' | null>(null);
+  const positionDirectionRef = useRef<'LONG' | 'SHORT' | null>(null);
 
   const isPosition = () => Boolean(positionDirectionRef.current);
-  const isLong = () => positionDirectionRef.current === 'long';
+  const isLong = () => positionDirectionRef.current === 'LONG';
   const getCurrentPrice = () => currentPriceRef.current;
+  const setCurrentPrice = (currentPrice: number) => {
+    currentPriceRef.current = currentPrice;
+    model.commit({ currentPrice });
+  };
 
   const initChart = useCallback(async (rootElement: HTMLDivElement) => {
     const { sciChartSurface, controls } = await createCandlestickChart(rootElement);
@@ -71,7 +76,7 @@ export default function Chart() {
     );
 
     controls.setData(`${SYMBOL.replace('USDT', '/USDT')}`, priceBars);
-    currentPriceRef.current = priceBars[priceBars.length - 1].close;
+    setCurrentPrice(priceBars[priceBars.length - 1].close);
 
     const visibleStart = new Date(endDate);
     visibleStart.setHours(endDate.getHours() - VISIBLE_HOURS);
@@ -93,7 +98,7 @@ export default function Chart() {
         volume: realtimeBar.volume,
       };
       controls.onNewTrade(priceBar);
-      currentPriceRef.current = realtimeBar.close;
+      setCurrentPrice(realtimeBar.close);
     });
 
     // === Ждём первый рендер ===
@@ -225,7 +230,7 @@ export default function Chart() {
         const entryY = entryLine.y1 as number;
 
         if (currentPrice) {
-          if (isPositionExist) {
+          if (model.hasPosition) {
             if (isLong() && currentStopY >= currentPrice) {
               stopLine.y1 = currentPrice;
             }
@@ -307,7 +312,7 @@ export default function Chart() {
       isDraggingRef.current = true;
 
       // Очищаем старое, если было
-      positionDirectionRef.current = price > currentPriceRef.current ? 'short' : 'long';
+      positionDirectionRef.current = price > currentPriceRef.current ? 'SHORT' : 'LONG';
       clearAnnotations();
 
       // Инициализируем аннотации сразу. 
@@ -340,9 +345,9 @@ export default function Chart() {
         if (finalStop !== undefined && finalTp !== undefined) {
           // Определяем и фиксируем направление позиции
           if (finalEntry > finalStop) {
-            positionDirectionRef.current = 'long';
+            positionDirectionRef.current = 'LONG';
           } else if (finalEntry < finalStop) {
-            positionDirectionRef.current = 'short';
+            positionDirectionRef.current = 'SHORT';
           } else {
             // Если Stop на Entry — позиция невалидна, сбрасываем
             positionDirectionRef.current = null;
@@ -353,11 +358,17 @@ export default function Chart() {
           }
 
           console.log('=== ПОЗИЦИЯ СОЗДАНА ===');
-          console.log('Направление:', positionDirectionRef.current.toUpperCase());
+          console.log('Направление:', positionDirectionRef.current);
           console.log('Entry:', finalEntry.toFixed(2));
           console.log('Stop Loss:', finalStop.toFixed(2));
           console.log('Take profit:', finalTp.toFixed(2));
           console.log('Риск:', Math.abs(finalEntry - finalStop).toFixed(2));
+          model.setStrategy({
+            positionSide: positionDirectionRef.current,
+            entryPrice: parseFloat(finalEntry.toFixed(2)),
+            stopLoss: parseFloat(finalStop.toFixed(2)),
+            takeProfit: parseFloat(finalTp.toFixed(2)),
+          })
         }
       }
 
@@ -410,3 +421,5 @@ export default function Chart() {
     </div>
   );
 }
+
+export default observer(Chart);

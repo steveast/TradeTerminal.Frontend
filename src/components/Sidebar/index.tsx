@@ -4,14 +4,14 @@ import { Tabs } from '@mantine/core';
 import StopOneStrategy from './StopOneStrategy';
 
 export function Sidebar() {
-  const { terminalModel } = useModels();
+  const { terminalModel: model } = useModels();
 
   return (
     <Tabs
-      defaultValue={terminalModel.activeTab}
+      defaultValue={model.activeTab}
       radius={0}
       onChange={(t) => {
-        terminalModel.commit({ activeTab: t as 'stopOne' | 'squeeze' });
+        model.commit({ activeTab: t as 'stopOne' | 'squeeze' });
       }}
     >
       <Tabs.List>

@@ -4,7 +4,7 @@ import { Group } from '@mantine/core';
 
 export const Terminal = () => {
   return (
-    <Group gap={0} align='top'>
+    <Group gap={0} align="top">
       <Chart />
       <Sidebar />
     </Group>

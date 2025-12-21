@@ -2,11 +2,11 @@
  * Defines a price bar with Open, High, Low, Close and Date encoded as number
  */
 export type TPriceBar = {
+  close: number;
   date: number;
-  open: number;
   high: number;
   low: number;
-  close: number;
+  open: number;
   volume: number;
 };
 

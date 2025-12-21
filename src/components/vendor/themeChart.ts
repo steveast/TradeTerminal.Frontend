@@ -1,36 +1,36 @@
 import { IThemeProvider, SciChartJSDarkv2Theme } from 'scichart';
 
 export interface AppThemeBase {
-  SciChartJsTheme: IThemeProvider;
+  Background: string;
 
   // general colors
   ForegroundColor: string;
-  Background: string;
-
-  // Series colors
-  VividSkyBlue: string;
-  VividPink: string;
-  VividTeal: string;
-  VividOrange: string;
-  VividBlue: string;
-  VividPurple: string;
-  VividGreen: string;
-  VividRed: string;
-
-  MutedSkyBlue: string;
-  MutedPink: string;
-  MutedTeal: string;
-  MutedOrange: string;
   MutedBlue: string;
+
+  MutedOrange: string;
+  MutedPink: string;
   MutedPurple: string;
   MutedRed: string;
-
-  PaleSkyBlue: string;
-  PalePink: string;
-  PaleTeal: string;
-  PaleOrange: string;
+  MutedSkyBlue: string;
+  MutedTeal: string;
   PaleBlue: string;
+  PaleOrange: string;
+
+  PalePink: string;
   PalePurple: string;
+  PaleSkyBlue: string;
+  PaleTeal: string;
+  SciChartJsTheme: IThemeProvider;
+  VividBlue: string;
+  VividGreen: string;
+
+  VividOrange: string;
+  VividPink: string;
+  VividPurple: string;
+  VividRed: string;
+  // Series colors
+  VividSkyBlue: string;
+  VividTeal: string;
 }
 
 export class SciChart2022AppTheme implements AppThemeBase {

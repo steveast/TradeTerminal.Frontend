@@ -1,5 +1,6 @@
 // eslint.config.js
 import mantine from 'eslint-config-mantine';
+import perfectionist from 'eslint-plugin-perfectionist';
 import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 
@@ -9,6 +10,12 @@ export default defineConfig(
 
   // Конфиг Mantine (react, jsx-a11y, import и т.д.)
   ...mantine,
+
+  {
+    plugins: {
+      perfectionist,
+    },
+  },
 
   // Глобальные игноры
   {
@@ -48,6 +55,25 @@ export default defineConfig(
 
       // Дополнительно полезные ослабления (по желанию оставь или удали)
       '@typescript-eslint/no-explicit-any': 'warn', // или 'off', если хочешь полностью разрешить any
+
+      quotes: ['error', 'single', { avoidEscape: true }],
+      'jsx-quotes': ['error', 'prefer-double'],
+      'perfectionist/sort-interfaces': [
+        'error',
+        {
+          type: 'alphabetical',
+          order: 'asc',
+          ignoreCase: true,
+        },
+      ],
+      'perfectionist/sort-object-types': [
+        'error',
+        {
+          type: 'alphabetical',
+          order: 'asc',
+          ignoreCase: true,
+        },
+      ],
     },
   }
 
