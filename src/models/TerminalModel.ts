@@ -1,7 +1,7 @@
 import { IStrategy } from '@app/types/trade';
 import { TMessage } from '@app/types/ws';
 import { LS } from '@app/utils/storage';
-import { observable, makeObservable, action, runInAction, reaction } from 'mobx';
+import { observable, makeObservable, action, runInAction, reaction, toJS } from 'mobx';
 import { ArrayQueue, ConstantBackoff, Websocket, WebsocketBuilder } from 'websocket-ts';
 
 
@@ -11,6 +11,7 @@ interface ITerminalModel {
   currentPrice: number;
   deposit: number;
   hasPosition: boolean;
+  leverage: number;
   strategy: IStrategy;
   symbol: string;
 }
@@ -23,6 +24,8 @@ export class TerminalModel implements ITerminalModel {
   @observable symbol: string = 'BTCUSDT';
   @observable hasPosition: boolean = false;
   @observable deposit: number = 1000;
+  @observable leverage: number = 10;
+  @observable tickSize: number = 1;
 
   @observable strategy: IStrategy = {
     entryPrice: this.currentPrice,
@@ -31,7 +34,7 @@ export class TerminalModel implements ITerminalModel {
     stopLoss: -(this.currentPrice * 0.09),
     symbol: this.symbol,
     takeProfit: this.currentPrice * 0.09,
-    usdAmount: this.deposit
+    usdAmount: this.deposit * this.leverage
   };
 
 
@@ -147,27 +150,10 @@ export class TerminalModel implements ITerminalModel {
     });
   }
 
-  public strategyBuy(payload: Pick<IStrategy, 'usdAmount' | 'entryPrice' | 'stopLoss' | 'takeProfit'>) {
+  public runStrategy() {
     this.send({
       type: 'strategy',
-      payload: {
-        symbol: this.symbol,
-        side: 'BUY',
-        positionSide: 'LONG',
-        ...payload,
-      },
-    });
-  }
-
-  public strategySell(payload: Pick<IStrategy, 'usdAmount' | 'entryPrice' | 'stopLoss' | 'takeProfit'>) {
-    this.send({
-      type: 'strategy',
-      payload: {
-        symbol: this.symbol,
-        side: 'SELL',
-        positionSide: 'SHORT',
-        ...payload,
-      },
+      payload: toJS(this.strategy),
     });
   }
 
@@ -184,7 +170,7 @@ export class TerminalModel implements ITerminalModel {
     this.strategy = {
       symbol: this.symbol,
       side: payload.positionSide === 'LONG' ? 'BUY' : 'SELL',
-      usdAmount,
+      usdAmount: usdAmount * this.leverage,
       ...payload,
     };
   }

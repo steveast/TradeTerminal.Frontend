@@ -125,16 +125,16 @@ function Chart() {
 
       if (!isStop) {
         if (isLong) {
-          labelPlacement = ELabelPlacement.TopRight;
+          labelPlacement = ELabelPlacement.TopLeft;
         } else {
-          labelPlacement = ELabelPlacement.BottomRight;
+          labelPlacement = ELabelPlacement.BottomLeft;
         }
       }
       if (isStop) {
         if (isLong) {
-          labelPlacement = ELabelPlacement.BottomRight;
+          labelPlacement = ELabelPlacement.BottomLeft;
         } else {
-          labelPlacement = ELabelPlacement.TopRight;
+          labelPlacement = ELabelPlacement.TopLeft;
         }
       }
       const getLabelValue = () => {
@@ -150,7 +150,7 @@ function Chart() {
           result = label;
         }
 
-        result += `: ${price.toFixed(2)}`;
+        result += `: ${price.toFixed(model.tickSize)}`;
         result += isEntry ? ` 1:${ratio}` : '';
 
         if (isStop) {
@@ -236,7 +236,7 @@ function Chart() {
 
         // Обновляем TP
         // takeProfitLine.y1 = newTp;
-        // takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(2)}`;
+        // takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(model.tickSize)}`;
 
         // === Расчёт соотношения ===
         const risk = Math.abs(newEntry - newStop);
@@ -253,15 +253,15 @@ function Chart() {
         zone.y2 = Math.max(newEntry, newStop);
 
         // Можно обновить лейблы entry/stop если нужно
-        entryLine.labelValue = `${isLong ? 'Long' : 'Short'}: ${newEntry.toFixed(2)} ${ratioString}`;
-        stopLine.labelValue = `Stop Loss: ${newStop.toFixed(2)} ${pc.stop}`;
-        takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(2)} ${pc.takeProfit}`;
+        entryLine.labelValue = `${isLong ? 'Long' : 'Short'}: ${newEntry.toFixed(model.tickSize)} ${ratioString}`;
+        stopLine.labelValue = `Stop Loss: ${newStop.toFixed(model.tickSize)} ${pc.stop}%`;
+        takeProfitLine.labelValue = `Take profit: ${newTp.toFixed(model.tickSize)} ${pc.takeProfit}%`;
 
         model.setStrategy({
           positionSide: positionDirectionRef.current!,
-          entryPrice: parseFloat(newEntry.toFixed(2)),
-          stopLoss: parseFloat(newStop.toFixed(2)),
-          takeProfit: parseFloat(newTp.toFixed(2)),
+          entryPrice: parseFloat(newEntry.toFixed(model.tickSize)),
+          stopLoss: parseFloat(newStop.toFixed(model.tickSize)),
+          takeProfit: parseFloat(newTp.toFixed(model.tickSize)),
         });
 
         // Перерисовка (не обязательно, SciChart обычно сам обновляет)
@@ -363,7 +363,7 @@ function Chart() {
       // На момент нажатия Stop Loss равен Entry (нулевая зона)
       updateAnnotations(price, price);
 
-      console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(2));
+      console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(model.tickSize));
     };
 
     // Внутри onMouseMove
@@ -403,15 +403,15 @@ function Chart() {
 
           console.log('=== ПОЗИЦИЯ СОЗДАНА ===');
           console.log('Направление:', positionDirectionRef.current);
-          console.log('Entry:', finalEntry.toFixed(2));
-          console.log('Stop Loss:', finalStop.toFixed(2));
-          console.log('Take profit:', finalTp.toFixed(2));
-          console.log('Риск:', Math.abs(finalEntry - finalStop).toFixed(2));
+          console.log('Entry:', finalEntry.toFixed(model.tickSize));
+          console.log('Stop Loss:', finalStop.toFixed(model.tickSize));
+          console.log('Take profit:', finalTp.toFixed(model.tickSize));
+          console.log('Риск:', Math.abs(finalEntry - finalStop).toFixed(model.tickSize));
           model.setStrategy({
             positionSide: positionDirectionRef.current,
-            entryPrice: parseFloat(finalEntry.toFixed(2)),
-            stopLoss: parseFloat(finalStop.toFixed(2)),
-            takeProfit: parseFloat(finalTp.toFixed(2)),
+            entryPrice: parseFloat(finalEntry.toFixed(model.tickSize)),
+            stopLoss: parseFloat(finalStop.toFixed(model.tickSize)),
+            takeProfit: parseFloat(finalTp.toFixed(model.tickSize)),
           });
         }
       }

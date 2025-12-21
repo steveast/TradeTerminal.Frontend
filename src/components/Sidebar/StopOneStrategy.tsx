@@ -59,7 +59,7 @@ function StopOneStrategy() {
         size="xs"
         variant="filled"
         onClick={() => {
-
+          model.runStrategy();
         }}
       >
         Create strategy
