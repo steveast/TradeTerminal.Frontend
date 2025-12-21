@@ -32,6 +32,7 @@ const VISIBLE_HOURS = 200;
 export default function Chart() {
   const entryAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const stopAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
+  const takeProfitAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const zoneAnnotationRef = useRef<BoxAnnotation | null>(null);
 
   const isDraggingRef = useRef(false);
@@ -85,7 +86,7 @@ export default function Chart() {
 
     // === Аннотации ===
     const clearAnnotations = () => {
-      [entryAnnotationRef, stopAnnotationRef, zoneAnnotationRef].forEach((ref) => {
+      [entryAnnotationRef, stopAnnotationRef, zoneAnnotationRef, takeProfitAnnotationRef].forEach((ref) => {
         if (ref.current) {
           sciChartSurface.annotations.remove(ref.current);
           ref.current = null;
@@ -96,6 +97,7 @@ export default function Chart() {
     const createHorizontalLine = (price: number, label: string, color: string, isDashed = false, entry: number, stop: number, isStop: boolean) => {
       const isLong = entry > stop;
       let labelPlacement;
+
       if (!isStop) {
         if (isLong) {
           labelPlacement = ELabelPlacement.TopLeft;
@@ -113,13 +115,14 @@ export default function Chart() {
 
       return new HorizontalLineAnnotation({
         y1: price,
-        stroke: `${color}CC`, // полупрозрачный
+        stroke: `${color}CC`,
         strokeThickness: 1,
         strokeDashArray: isDashed ? [6, 4] : undefined,
         showLabel: true,
         labelPlacement,
         axisFontSize: 12,
         labelValue: `${label}: ${price.toFixed(2)}`,
+        axisLabelFill: `${color}80`,
         isEditable: false,
         annotationLayer: EAnnotationLayer.BelowChart,
       });
@@ -142,18 +145,22 @@ export default function Chart() {
 
     const updateAnnotations = (entry: number, current: number) => {
       clearAnnotations();
+      const tpPrice = entry + (entry - current) * 3;
 
       const entryLine = createHorizontalLine(entry, 'Entry', '#00ff00', false, entry, current, false);
       const stopLine = createHorizontalLine(current, 'Stop Loss', '#ff0000', true, entry, current, true);
+      const takeProfitLine = createHorizontalLine(tpPrice, 'Take profit', '#d4ff00', true, entry, current, false);
 
       sciChartSurface.annotations.add(entryLine);
       sciChartSurface.annotations.add(stopLine);
+      sciChartSurface.annotations.add(takeProfitLine);
 
       const zone = createZone(entry, current);
       sciChartSurface.annotations.add(zone);
 
       entryAnnotationRef.current = entryLine;
       stopAnnotationRef.current = stopLine;
+      takeProfitAnnotationRef.current = takeProfitLine;
       zoneAnnotationRef.current = zone;
     };
 
@@ -183,10 +190,14 @@ export default function Chart() {
     };
 
     const onMouseDown = (e: MouseEvent) => {
+      const price = getPriceFromEvent(e);
+
+      if (e.button !== 0) {
+        console.log(price);
+      }
       if (e.button !== 2) { return; }
       e.preventDefault();
 
-      const price = getPriceFromEvent(e);
       entryPriceRef.current = price;
       isDraggingRef.current = true;
 
@@ -211,10 +222,12 @@ export default function Chart() {
     const onMouseUpOrLeave = () => {
       if (isDraggingRef.current && entryPriceRef.current !== null) {
         const finalStop = stopAnnotationRef.current?.y1 as number | undefined;
-        if (finalStop !== undefined) {
+        const finalTp = takeProfitAnnotationRef.current?.y1 as number | undefined;
+        if (finalStop !== undefined && finalTp) {
           console.log('=== ПОЗИЦИЯ ГОТОВА ===');
           console.log('Entry:', entryPriceRef.current.toFixed(2));
           console.log('Stop Loss:', finalStop.toFixed(2));
+          console.log('Take profit:', finalTp.toFixed(2));
           console.log('Направление:', entryPriceRef.current > finalStop ? 'LONG' : 'SHORT');
           console.log('Риск:', Math.abs(entryPriceRef.current - finalStop).toFixed(2));
         }
