@@ -30,6 +30,8 @@ const INITIAL_LIMIT = 1000;
 const VISIBLE_HOURS = 200;
 
 export default function Chart() {
+  const isPositionExist = false;
+
   const colorLong = '#00ff00';
   const colorShort = '#ff0000';
   const colorTake = '#d4ff00';
@@ -43,6 +45,10 @@ export default function Chart() {
   const isDraggingRef = useRef(false);
   const entryPriceRef = useRef<number | null>(null);
   const currentPriceRef = useRef<number>(0);
+  const positionDirectionRef = useRef<'long' | 'short' | null>(null);
+
+  const isPosition = () => Boolean(positionDirectionRef.current);
+  const isLong = () => positionDirectionRef.current === 'long';
 
   const initChart = useCallback(async (rootElement: HTMLDivElement) => {
     const { sciChartSurface, controls } = await createCandlestickChart(rootElement);
@@ -177,6 +183,8 @@ export default function Chart() {
 
       // === Подписка на перетаскивание ===
       const recalculateAll = () => {
+        if (!isPosition()) { return; } // если позиция ещё не создана
+
         const newEntry = entryLine.y1 as number;
         const newStop = stopLine.y1 as number;
         const newTp = takeProfitLine.y1 as number;
@@ -210,10 +218,40 @@ export default function Chart() {
         sciChartSurface.invalidateElement();
       };
 
+      const stopLossRestrict = () => {
+        const currentStopY = stopLine.y1 as number;
+        const currentPrice = currentPriceRef.current;
+        const entryY = entryLine.y1 as number;
+        console.log('isLong', isLong())
+
+        if (currentPrice) {
+          if (isPositionExist) {
+            if (isLong() && currentStopY >= currentPrice) {
+              stopLine.y1 = currentPrice;
+            }
+            if (!isLong() && currentStopY <= currentPrice) {
+              stopLine.y1 = currentPrice;
+            }
+          } else {
+            if (isLong() && currentStopY >= entryY) {
+              stopLine.y1 = entryY;
+            }
+            if (!isLong() && currentStopY <= entryY) {
+              stopLine.y1 = entryY;
+            }
+          }
+        }
+      }
+
       // Подписываемся на dragEnded (лучше, чем на каждое delta — меньше перерисовок)
       entryLine.dragDelta.subscribe(recalculateAll);
-      stopLine.dragDelta.subscribe(recalculateAll);
-      takeProfitLine.dragDelta.subscribe(recalculateAll);
+      stopLine.dragDelta.subscribe(() => {
+        stopLossRestrict();
+        recalculateAll();
+      });
+      takeProfitLine.dragDelta.subscribe(() => {
+        recalculateAll();
+      });
     };
 
     // === ПРАВАЯ КНОПКА МЫШИ (на canvas для точности) ===
@@ -254,6 +292,7 @@ export default function Chart() {
       isDraggingRef.current = true;
 
       // Очищаем старое, если было
+      positionDirectionRef.current = null;
       clearAnnotations();
 
       // Инициализируем аннотации сразу. 
@@ -273,17 +312,34 @@ export default function Chart() {
 
     const onMouseUpOrLeave = () => {
       if (isDraggingRef.current && entryPriceRef.current !== null) {
+        const finalEntry = entryPriceRef.current;
         const finalStop = stopAnnotationRef.current?.y1 as number | undefined;
         const finalTp = takeProfitAnnotationRef.current?.y1 as number | undefined;
-        if (finalStop !== undefined && finalTp) {
-          console.log('=== ПОЗИЦИЯ ГОТОВА ===');
-          console.log('Entry:', entryPriceRef.current.toFixed(2));
+
+        if (finalStop !== undefined && finalTp !== undefined) {
+          // Определяем и фиксируем направление позиции
+          if (finalEntry > finalStop) {
+            positionDirectionRef.current = 'long';
+          } else if (finalEntry < finalStop) {
+            positionDirectionRef.current = 'short';
+          } else {
+            // Если Stop на Entry — позиция невалидна, сбрасываем
+            positionDirectionRef.current = null;
+            clearAnnotations();
+            console.log('Позиция не создана: Stop Loss совпадает с Entry');
+            isDraggingRef.current = false;
+            return;
+          }
+
+          console.log('=== ПОЗИЦИЯ СОЗДАНА ===');
+          console.log('Направление:', positionDirectionRef.current.toUpperCase());
+          console.log('Entry:', finalEntry.toFixed(2));
           console.log('Stop Loss:', finalStop.toFixed(2));
           console.log('Take profit:', finalTp.toFixed(2));
-          console.log('Направление:', entryPriceRef.current > finalStop ? 'LONG' : 'SHORT');
-          console.log('Риск:', Math.abs(entryPriceRef.current - finalStop).toFixed(2));
+          console.log('Риск:', Math.abs(finalEntry - finalStop).toFixed(2));
         }
       }
+
       isDraggingRef.current = false;
     };
 
