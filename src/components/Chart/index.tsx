@@ -34,6 +34,7 @@ export default function Chart() {
   const colorShort = '#ff0000';
   const colorTake = '#d4ff00';
   const ratio = 3;
+
   const entryAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const stopAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const takeProfitAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
@@ -41,6 +42,7 @@ export default function Chart() {
 
   const isDraggingRef = useRef(false);
   const entryPriceRef = useRef<number | null>(null);
+  const currentPriceRef = useRef<number>(0);
 
   const initChart = useCallback(async (rootElement: HTMLDivElement) => {
     const { sciChartSurface, controls } = await createCandlestickChart(rootElement);
@@ -62,6 +64,7 @@ export default function Chart() {
     );
 
     controls.setData(`${SYMBOL.replace('USDT', '/USDT')}`, priceBars);
+    currentPriceRef.current = priceBars[priceBars.length - 1].close;
 
     const visibleStart = new Date(endDate);
     visibleStart.setHours(endDate.getHours() - VISIBLE_HOURS);
@@ -83,6 +86,7 @@ export default function Chart() {
         volume: realtimeBar.volume,
       };
       controls.onNewTrade(priceBar);
+      currentPriceRef.current = realtimeBar.close;
     });
 
     // === Ждём первый рендер ===
