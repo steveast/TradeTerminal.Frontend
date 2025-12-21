@@ -222,7 +222,6 @@ export default function Chart() {
         const currentStopY = stopLine.y1 as number;
         const currentPrice = currentPriceRef.current;
         const entryY = entryLine.y1 as number;
-        console.log('isLong', isLong())
 
         if (currentPrice) {
           if (isPositionExist) {
@@ -243,6 +242,20 @@ export default function Chart() {
         }
       }
 
+      const takeProfitRestrict = () => {
+        const currentTakeY = takeProfitLine.y1 as number;
+        const currentPrice = currentPriceRef.current;
+
+        if (currentPrice) {
+          if (isLong() && currentTakeY <= currentPrice) {
+            takeProfitLine.y1 = currentPrice;
+          }
+          if (!isLong() && currentTakeY >= currentPrice) {
+            takeProfitLine.y1 = currentPrice;
+          }
+        }
+      }
+
       // Подписываемся на dragEnded (лучше, чем на каждое delta — меньше перерисовок)
       entryLine.dragDelta.subscribe(recalculateAll);
       stopLine.dragDelta.subscribe(() => {
@@ -250,6 +263,7 @@ export default function Chart() {
         recalculateAll();
       });
       takeProfitLine.dragDelta.subscribe(() => {
+        takeProfitRestrict();
         recalculateAll();
       });
     };
