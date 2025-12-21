@@ -9,13 +9,13 @@ function StopOneStrategy() {
       <Slider
         color="blue"
         marks={[
-          { value: model.deposit * 0.2, label: '20%' },
-          { value: model.deposit * 0.33 },
-          { value: model.deposit * 0.5, label: '50%' },
-          { value: model.deposit * 0.66 },
-          { value: model.deposit * 0.8, label: '80%' },
+          { value: model.available * 0.2, label: '20%' },
+          { value: model.available * 0.33 },
+          { value: model.available * 0.5, label: '50%' },
+          { value: model.available * 0.66 },
+          { value: model.available * 0.8, label: '80%' },
         ]}
-        domain={[0, model.deposit]}
+        domain={[0, model.available]}
         max={model.strategy.usdAmount}
         mb="md"
         radius="xs"

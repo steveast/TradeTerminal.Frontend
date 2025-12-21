@@ -25,6 +25,7 @@ export class TerminalModel implements ITerminalModel {
   @observable hasPosition: boolean = false;
   @observable deposit: number = 1000;
   @observable leverage: number = 10;
+  @observable available: number = this.deposit * this.leverage;
   @observable tickSize: number = 1;
 
   @observable strategy: IStrategy = {
@@ -34,7 +35,7 @@ export class TerminalModel implements ITerminalModel {
     stopLoss: -(this.currentPrice * 0.09),
     symbol: this.symbol,
     takeProfit: this.currentPrice * 0.09,
-    usdAmount: this.deposit * this.leverage
+    usdAmount: this.available
   };
 
 
