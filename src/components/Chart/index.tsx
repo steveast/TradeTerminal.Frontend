@@ -49,6 +49,7 @@ export default function Chart() {
 
   const isPosition = () => Boolean(positionDirectionRef.current);
   const isLong = () => positionDirectionRef.current === 'long';
+  const getCurrentPrice = () => currentPriceRef.current;
 
   const initChart = useCallback(async (rootElement: HTMLDivElement) => {
     const { sciChartSurface, controls } = await createCandlestickChart(rootElement);
@@ -306,7 +307,7 @@ export default function Chart() {
       isDraggingRef.current = true;
 
       // Очищаем старое, если было
-      positionDirectionRef.current = null;
+      positionDirectionRef.current = price > currentPriceRef.current ? 'short' : 'long';
       clearAnnotations();
 
       // Инициализируем аннотации сразу. 
@@ -320,8 +321,14 @@ export default function Chart() {
     const onMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current || entryPriceRef.current === null) { return; }
 
-      const currentPrice = getPriceFromEvent(e);
-      updateAnnotations(entryPriceRef.current, currentPrice);
+      const mousePrice = getPriceFromEvent(e);
+
+      if (isLong() && mousePrice <= getCurrentPrice() && entryPriceRef.current >= mousePrice) {
+        updateAnnotations(entryPriceRef.current, mousePrice);
+      }
+      if (!isLong() && mousePrice >= getCurrentPrice() && entryPriceRef.current <= mousePrice) {
+        updateAnnotations(entryPriceRef.current, mousePrice);
+      }
     };
 
     const onMouseUpOrLeave = () => {
