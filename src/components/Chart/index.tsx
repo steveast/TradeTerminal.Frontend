@@ -118,6 +118,7 @@ export default function Chart() {
         strokeDashArray: isDashed ? [6, 4] : undefined,
         showLabel: true,
         labelPlacement,
+        axisFontSize: 12,
         labelValue: `${label}: ${price.toFixed(2)}`,
         isEditable: false,
         annotationLayer: EAnnotationLayer.BelowChart,
