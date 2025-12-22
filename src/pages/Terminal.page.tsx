@@ -12,8 +12,9 @@ const Terminal = () => {
     if (model.connected) {
       model.getSymbolInfo();
       model.getAccountInfo();
+      model.getOpenTPandSL();
     }
-  }, [model.connected])
+  }, [model.connected]);
 
   return (
     <Group gap={0} align="top" wrap="nowrap">

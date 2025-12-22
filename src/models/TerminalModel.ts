@@ -109,6 +109,12 @@ export class TerminalModel implements ITerminalModel {
               })
 
               break;
+            case 'openTPandSL':
+              this.modifyStrategy({
+                takeProfit: data.takeProfit.triggerPrice,
+                stopLoss: data.stopLoss.triggerPrice,
+              });
+              break;
             case 'orderResult':
             case 'closeResult':
               console.log('Результат команды:', data);
@@ -166,6 +172,16 @@ export class TerminalModel implements ITerminalModel {
   public getAccountInfo() {
     this.send({
       type: 'accountInfo',
+    });
+  }
+
+  public getOpenTPandSL() {
+    this.send({
+      type: 'openTPandSL',
+      payload: {
+        symbol: this.symbol,
+        positionSide: this.strategy.positionSide,
+      }
     });
   }
 

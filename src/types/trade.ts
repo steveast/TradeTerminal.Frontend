@@ -35,3 +35,33 @@ export type IPosition = {
   unrealizedProfit: number;         // нереализованный PnL
   updateTime: number;               // время обновления
 };
+
+export interface IAlgoOrder {
+  actualOrderId: string;
+  actualPrice: string;
+  algoId: number;
+  algoStatus: string;
+  algoType: string;
+  clientAlgoId: string;
+  closePosition: boolean;
+  createTime: number;
+  goodTillDate: number;
+  icebergQuantity: number | null;
+  orderType: string;
+  positionSide: string;
+  price: string;
+  priceMatch: string;
+  priceProtect: boolean;
+  quantity: string;
+  reduceOnly: boolean;
+  selfTradePreventionMode: string;
+  side: string;
+  symbol: string;
+  timeInForce: string;
+  tpOrderType: string;
+  triggerPrice: string;
+  triggerTime: number;
+  updateTime: number;
+  workingType: string;
+}
+

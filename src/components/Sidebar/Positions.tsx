@@ -5,7 +5,6 @@ import { observer } from 'mobx-react-lite';
 
 const Positions = () => {
   const { terminalModel: model } = useModels();
-  console.log(model.positions)
   return (
     <Stack gap="xs" px="md" pt="md">
       {model.positions.map((pos) => (
