@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   SciChartReact,
   TResolvedReturnType,
@@ -39,6 +39,8 @@ function Chart() {
   const colorTake = '#d4ff00';
   const ratio = 3;
 
+  const updateAnnotationsRef = useRef<(entry: number, stop: number) => void>(() => { });
+
   const entryAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const stopAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const takeProfitAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
@@ -59,7 +61,6 @@ function Chart() {
 
   const initChart = useCallback(async (rootElement: HTMLDivElement) => {
     const { sciChartSurface, controls } = await createCandlestickChart(rootElement);
-
     const yAxis = sciChartSurface.yAxes.get(0) as NumericAxis;
 
     // === Загрузка исторических данных ===
@@ -203,19 +204,20 @@ function Chart() {
       });
     };
 
-    const updateAnnotations = (entry: number, current: number) => {
+    const updateAnnotations = (entry: number, stopPrice: number, takePrice?: number) => {
+      console.log('updateAnnotations', entry, stopPrice, takePrice);
       clearAnnotations();
-      const tpPrice = entry + (entry - current) * ratio;
+      const tpPrice = takePrice || entry + (entry - stopPrice) * ratio;
 
-      const entryLine = createHorizontalLine(entry, 'Entry', entry, current);
-      const stopLine = createHorizontalLine(current, 'Stop Loss', entry, current);
-      const takeProfitLine = createHorizontalLine(tpPrice, 'Take profit', entry, current);
+      const entryLine = createHorizontalLine(entry, 'Entry', entry, stopPrice);
+      const stopLine = createHorizontalLine(stopPrice, 'Stop Loss', entry, stopPrice);
+      const takeProfitLine = createHorizontalLine(tpPrice, 'Take profit', entry, stopPrice);
 
       sciChartSurface.annotations.add(entryLine);
       sciChartSurface.annotations.add(stopLine);
       sciChartSurface.annotations.add(takeProfitLine);
 
-      const zone = createZone(entry, current);
+      const zone = createZone(entry, stopPrice);
       sciChartSurface.annotations.add(zone);
 
       entryAnnotationRef.current = entryLine;
@@ -306,7 +308,6 @@ function Chart() {
         }
       }
 
-      // Подписываемся на dragEnded (лучше, чем на каждое delta — меньше перерисовок)
       entryLine.dragDelta.subscribe(recalculateAll);
       stopLine.dragDelta.subscribe(() => {
         stopLossRestrict();
@@ -317,6 +318,8 @@ function Chart() {
         recalculateAll();
       });
     };
+
+    updateAnnotationsRef.current = updateAnnotations;
 
     // === ПРАВАЯ КНОПКА МЫШИ (на canvas для точности) ===
     const canvas = sciChartSurface.domCanvas2D;
@@ -446,6 +449,23 @@ function Chart() {
       cleanup: cleanupMouse,
     };
   }, []);
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (model.hasPosition && updateAnnotationsRef.current) {
+        console.log(model.strategy)
+        entryPriceRef.current = model.strategy.entryPrice;
+        updateAnnotationsRef.current(
+          model.strategy.entryPrice,
+          model.strategy.stopLoss,
+          model.strategy.takeProfit
+        );
+        positionDirectionRef.current = model.strategy.positionSide === 'LONG' ? 'LONG' : 'SHORT';
+      } else if (!model.hasPosition) {
+        updateAnnotationsRef.current?.(0, 0);
+      }
+    }, 2000)
+  }, [model.hasPosition, model.strategy]);
 
   return (
     <div style={{ height: '100vh', display: 'flex', position: 'relative' }}>

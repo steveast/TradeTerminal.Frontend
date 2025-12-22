@@ -10,7 +10,6 @@ interface ITerminalModel {
   activeTab: 'stopOne' | 'squeeze';
   currentPrice: number;
   deposit: number;
-  hasPosition: boolean;
   leverage: number;
   positions: IPosition[];
   strategy: IStrategy;
@@ -24,7 +23,6 @@ export class TerminalModel implements ITerminalModel {
   // Trading
   @observable currentPrice: number = 0;
   @observable symbol: string = 'BTCUSDT';
-  @observable hasPosition: boolean = false;
   @observable deposit: number = 0;
   @observable leverage: number = 10;
   @observable positions: IPosition[] = [];
@@ -111,6 +109,7 @@ export class TerminalModel implements ITerminalModel {
               break;
             case 'openTPandSL':
               this.modifyStrategy({
+                entryPrice: this.currentPosition?.entryPrice,
                 takeProfit: data.takeProfit.triggerPrice,
                 stopLoss: data.stopLoss.triggerPrice,
               });
@@ -150,6 +149,16 @@ export class TerminalModel implements ITerminalModel {
   @computed
   public get notional() {
     return this.deposit * this.leverage;
+  }
+
+  @computed
+  public get hasPosition() {
+    return this.positions.some((x) => x.symbol === this.symbol);
+  }
+
+  @computed
+  public get currentPosition() {
+    return this.positions.find((x) => x.symbol === this.symbol);
   }
 
   protected send(msg: any) {
