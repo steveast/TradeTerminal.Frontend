@@ -2,6 +2,7 @@ import { useModels } from '@app/models';
 import { IconChessQueen, IconFishHook } from '@tabler/icons-react';
 import { Tabs } from '@mantine/core';
 import StopOneStrategy from './StopOneStrategy';
+import Positions from './Positions';
 
 export function Sidebar() {
   const { terminalModel: model } = useModels();
@@ -25,6 +26,7 @@ export function Sidebar() {
 
       <Tabs.Panel value="stopOne">
         <StopOneStrategy />
+        <Positions />
       </Tabs.Panel>
 
       <Tabs.Panel value="squeeze">Squeeze catcher</Tabs.Panel>

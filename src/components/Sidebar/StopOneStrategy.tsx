@@ -4,25 +4,28 @@ import { observer } from 'mobx-react-lite';
 
 function StopOneStrategy() {
   const { terminalModel: model } = useModels();
+
   return (
-    <Stack gap="xs" p="md">
+    <Stack gap="xs" px="md" pt="md">
       <Slider
+        key={model.notional}
         color="blue"
         marks={[
-          { value: model.available * 0.2, label: '20%' },
-          { value: model.available * 0.33 },
-          { value: model.available * 0.5, label: '50%' },
-          { value: model.available * 0.66 },
-          { value: model.available * 0.8, label: '80%' },
+          { value: model.notional * 0.2, label: '20%' },
+          { value: model.notional * 0.33 },
+          { value: model.notional * 0.5, label: '50%' },
+          { value: model.notional * 0.66 },
+          { value: model.notional * 0.8, label: '80%' },
         ]}
-        domain={[0, model.available]}
+        domain={[0, model.notional]}
         max={model.strategy.usdAmount}
         mb="md"
         radius="xs"
         size="sm"
+        step={Math.max(1, Math.floor(model.notional / 1000))}
         value={model.strategy.usdAmount}
         onChange={(usdAmount) => {
-          model.modifyStrategy({ usdAmount })
+          model.modifyStrategy({ usdAmount });
         }}
       />
 

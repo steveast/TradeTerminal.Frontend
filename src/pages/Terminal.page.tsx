@@ -11,11 +11,12 @@ const Terminal = () => {
   useEffect(() => {
     if (model.connected) {
       model.getSymbolInfo();
+      model.getAccountInfo();
     }
   }, [model.connected])
 
   return (
-    <Group gap={0} align="top">
+    <Group gap={0} align="top" wrap="nowrap">
       <Chart />
       <Sidebar />
     </Group>

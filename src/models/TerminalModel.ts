@@ -1,7 +1,7 @@
 import { IPosition, IStrategy, ISymbolInfo } from '@app/types/trade';
-import { TMessage } from '@app/types/ws';
+import { roundNumbers } from '@app/utils/roundNumbers';
 import { LS } from '@app/utils/storage';
-import { observable, makeObservable, action, runInAction, reaction, toJS } from 'mobx';
+import { observable, makeObservable, action, runInAction, reaction, toJS, computed } from 'mobx';
 import { ArrayQueue, ConstantBackoff, Websocket, WebsocketBuilder } from 'websocket-ts';
 
 
@@ -25,9 +25,8 @@ export class TerminalModel implements ITerminalModel {
   @observable currentPrice: number = 0;
   @observable symbol: string = 'BTCUSDT';
   @observable hasPosition: boolean = false;
-  @observable deposit: number = 1000;
+  @observable deposit: number = 0;
   @observable leverage: number = 10;
-  @observable available: number = this.deposit * this.leverage;
   @observable positions: IPosition[] = [];
 
   @observable symbolInfo: ISymbolInfo = {
@@ -44,12 +43,13 @@ export class TerminalModel implements ITerminalModel {
     stopLoss: -(this.currentPrice * 0.09),
     symbol: this.symbol,
     takeProfit: this.currentPrice * 0.09,
-    usdAmount: this.available
+    usdAmount: this.notional
   };
 
 
   // Connection
   @observable connected: boolean = false;
+  @observable status: 'disconnected' | 'connecting' | 'connected' = 'disconnected';
 
   // Privates
   private ws: Websocket;
@@ -81,14 +81,14 @@ export class TerminalModel implements ITerminalModel {
           const { data, type, message }: any = JSON.parse(ev.data);
 
           switch (type) {
-            case 'candle':
+            case 'candles':
               //setCandle(msg.data);
               break;
             case 'positions':
-              this.positions = data;
-              console.log(data);
+              this.positions = data.map((x: IPosition) => roundNumbers(x, this.symbolInfo.tickSize));
               break;
             case 'status':
+              this.status = data;
               break;
             case 'symbolChanged':
               // setCurrentSymbol(msg.symbol);
@@ -99,6 +99,15 @@ export class TerminalModel implements ITerminalModel {
               break;
             case 'symbolInfo':
               this.symbolInfo = data;
+              break;
+            case 'accountInfo':
+              // console.log(Number(data.availableBalance));
+              runInAction(() => {
+                const deposit = parseInt(data.availableBalance, 10);
+                this.deposit = deposit;
+                this.modifyStrategy({ usdAmount: this.notional });
+              })
+
               break;
             case 'orderResult':
             case 'closeResult':
@@ -132,6 +141,11 @@ export class TerminalModel implements ITerminalModel {
 
   // ============== Methods ==============
 
+  @computed
+  public get notional() {
+    return this.deposit * this.leverage;
+  }
+
   protected send(msg: any) {
     if (this.connected) {
       this.ws.send(JSON.stringify(msg));
@@ -146,6 +160,12 @@ export class TerminalModel implements ITerminalModel {
       payload: {
         symbol: this.symbol,
       },
+    });
+  }
+
+  public getAccountInfo() {
+    this.send({
+      type: 'accountInfo',
     });
   }
 
