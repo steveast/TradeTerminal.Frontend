@@ -359,14 +359,14 @@ function Chart() {
     const onMouseDown = (e: MouseEvent) => {
       const price = getPriceFromEvent(e);
 
+      console.log('model.hasPosition', model.hasPosition)
       if (e.button === 0) {
         console.log(price);
-        if (model.hasPosition) {
-          isDraggingRef.current = true;
-        }
+        isDraggingRef.current = true;
       }
       if (e.button !== 2 || model.hasPosition) { return; }
       e.preventDefault();
+      console.log('onMouseDown!')
 
       entryPriceRef.current = price;
       isDraggingRef.current = true;
@@ -384,15 +384,22 @@ function Chart() {
 
     // Внутри onMouseMove
     const onMouseMove = (e: MouseEvent) => {
+      console.log(isDraggingRef.current, entryPriceRef.current)
       if (!isDraggingRef.current || entryPriceRef.current === null) { return; }
 
       const mousePrice = getPriceFromEvent(e);
 
+      console.log(
+        isLong(),
+        mousePrice >= getCurrentPrice(),
+        entryPriceRef.current <= mousePrice
+      )
+
       if (isLong() && mousePrice <= getCurrentPrice() && entryPriceRef.current >= mousePrice) {
-        updateAnnotations(entryPriceRef.current, mousePrice, takePriceRef.current);
+        updateAnnotations(entryPriceRef.current, mousePrice, null);
       }
       if (!isLong() && mousePrice >= getCurrentPrice() && entryPriceRef.current <= mousePrice) {
-        updateAnnotations(entryPriceRef.current, mousePrice, takePriceRef.current);
+        updateAnnotations(entryPriceRef.current, mousePrice, null);
       }
     };
 
@@ -481,7 +488,7 @@ function Chart() {
           position.stopLoss.triggerPrice,
           position.takeProfit.triggerPrice,
         );
-      }, 5000)
+      }, 2000)
     } else {
       positionDirectionRef.current = null;
       clearAnnotationsRef.current();

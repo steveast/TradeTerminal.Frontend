@@ -1,13 +1,11 @@
 import { IPosition, IStrategy, ISymbolInfo } from '@app/types/trade';
 import { roundNumbers } from '@app/utils/roundNumbers';
-import { LS } from '@app/utils/storage';
 import { observable, makeObservable, action, runInAction, reaction, toJS, computed } from 'mobx';
 import { ArrayQueue, ConstantBackoff, Websocket, WebsocketBuilder } from 'websocket-ts';
 
 
 
 interface ITerminalModel {
-  activeTab: 'stopOne' | 'squeeze';
   currentPrice: number;
   deposit: number;
   leverage: number;
@@ -18,8 +16,6 @@ interface ITerminalModel {
 }
 
 export class TerminalModel implements ITerminalModel {
-  @observable activeTab: 'stopOne' | 'squeeze' = LS.get('activeTab', 'stopOne');
-
   // Trading
   @observable currentPrice: number = 0;
   @observable symbol: string = 'BTCUSDT';
@@ -54,12 +50,6 @@ export class TerminalModel implements ITerminalModel {
 
   constructor() {
     makeObservable(this);
-    reaction(
-      () => this.activeTab,
-      (activeTab) => {
-        LS.set('activeTab', activeTab);
-      }
-    );
     this.ws = new WebsocketBuilder('ws://localhost:3001')
       .withBackoff(new ConstantBackoff(2000)) // reconnect каждые 2 секунды
       .withBuffer(new ArrayQueue()) // буферизует сообщения при отключении
