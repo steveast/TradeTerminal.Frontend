@@ -31,7 +31,9 @@ export type IPosition = {
   positionAmt: number;              // размер позиции
   positionInitialMargin: number;    // начальная маржа позиции
   positionSide: 'LONG' | 'SHORT' | 'BOTH'; // сторона позиции
+  stopLoss: IAlgoOrder;
   symbol: string;                   // торговая пара
+  takeProfit: IAlgoOrder;
   unrealizedProfit: number;         // нереализованный PnL
   updateTime: number;               // время обновления
 };

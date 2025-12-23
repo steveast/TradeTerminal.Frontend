@@ -12,7 +12,7 @@ const Terminal = () => {
     if (model.connected) {
       model.getSymbolInfo();
       model.getAccountInfo();
-      model.getOpenTPandSL();
+      model.getPositions();
     }
   }, [model.connected]);
 

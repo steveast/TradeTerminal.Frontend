@@ -451,21 +451,8 @@ function Chart() {
   }, []);
 
   useEffect(() => {
-    setTimeout(() => {
-      if (model.hasPosition && updateAnnotationsRef.current) {
-        console.log(model.strategy)
-        entryPriceRef.current = model.strategy.entryPrice;
-        updateAnnotationsRef.current(
-          model.strategy.entryPrice,
-          model.strategy.stopLoss,
-          model.strategy.takeProfit
-        );
-        positionDirectionRef.current = model.strategy.positionSide === 'LONG' ? 'LONG' : 'SHORT';
-      } else if (!model.hasPosition) {
-        updateAnnotationsRef.current?.(0, 0);
-      }
-    }, 2000)
-  }, [model.hasPosition, model.strategy]);
+
+  }, [model.positions])
 
   return (
     <div style={{ height: '100vh', display: 'flex', position: 'relative' }}>

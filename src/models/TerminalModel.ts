@@ -83,6 +83,7 @@ export class TerminalModel implements ITerminalModel {
               //setCandle(msg.data);
               break;
             case 'positions':
+              console.log(data)
               this.positions = data.map((x: IPosition) => roundNumbers(x, this.symbolInfo.tickSize));
               break;
             case 'status':
@@ -107,7 +108,7 @@ export class TerminalModel implements ITerminalModel {
               })
 
               break;
-            case 'openTPandSL':
+            case 'openTpAndSl':
               this.modifyStrategy({
                 entryPrice: this.currentPosition?.entryPrice,
                 takeProfit: data.takeProfit.triggerPrice,
@@ -184,9 +185,15 @@ export class TerminalModel implements ITerminalModel {
     });
   }
 
-  public getOpenTPandSL() {
+  public getPositions() {
     this.send({
-      type: 'openTPandSL',
+      type: 'getPositions'
+    });
+  }
+
+  public getOpenTpAndSl() {
+    this.send({
+      type: 'openTpAndSl',
       payload: {
         symbol: this.symbol,
         positionSide: this.strategy.positionSide,

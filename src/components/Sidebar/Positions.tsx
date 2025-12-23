@@ -8,7 +8,7 @@ const Positions = () => {
   return (
     <Stack gap="xs" px="md" pt="md">
       {model.positions.map((pos) => (
-        <Group mb="xs" key={pos.updateTime}>
+        <Group mb="xs" key={pos.updateTime} wrap="nowrap">
           <Stack gap={0}>
             <Group gap={0}><IconCoinBitcoin />{pos.isolated ? <IconLockBitcoin /> : <IconArrowsCross />} <Text ml="xs" fw={500} c="teal.4">{pos.symbol}</Text></Group>
             <Group gap="xs"><Text>Entry: {pos.entryPrice} BE: {pos.breakEvenPrice}</Text></Group>
