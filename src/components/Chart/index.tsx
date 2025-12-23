@@ -39,7 +39,8 @@ function Chart() {
   const colorTake = '#d4ff00';
   const ratio = 3;
 
-  const updateAnnotationsRef = useRef<(entry: number, stop: number) => void>(() => { });
+  const updateAnnotationsRef = useRef<(entry: number, stop: number, take: number | null) => void>(() => { });
+  const clearAnnotationsRef = useRef<() => void>(() => { });
 
   const entryAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const stopAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
@@ -48,8 +49,12 @@ function Chart() {
 
   const isDraggingRef = useRef(false);
   const entryPriceRef = useRef<number | null>(null);
+  const stopPriceRef = useRef<number | null>(null);
+  const takePriceRef = useRef<number | null>(null);
   const currentPriceRef = useRef<number>(0);
-  const positionDirectionRef = useRef<'LONG' | 'SHORT' | null>(null);
+  const positionDirectionRef = useRef<'LONG' | 'SHORT' | null>(
+    model.currentPosition?.positionSide || null
+  );
 
   const isPosition = () => Boolean(positionDirectionRef.current);
   const isLong = () => positionDirectionRef.current === 'LONG';
@@ -115,6 +120,7 @@ function Chart() {
         }
       });
     };
+    clearAnnotationsRef.current = clearAnnotations;
 
     const createHorizontalLine = (price: number, label: string, entry: number, stop: number) => {
       const isLong = entry > stop;
@@ -123,6 +129,10 @@ function Chart() {
       const isTake = label === 'Take profit';
       const color = isEntry ? colorLong : (isStop ? colorShort : colorTake);
       let labelPlacement;
+      const isEditable = () => {
+        if (isEntry && model.hasPosition) { return false; }
+        return true;
+      }
 
       if (!isStop) {
         if (isLong) {
@@ -156,7 +166,7 @@ function Chart() {
 
         if (isStop) {
           const { stop } = calcPercentsFromEntry(
-            entryPriceRef.current!,
+            entry,
             price,
             price
           );
@@ -164,7 +174,7 @@ function Chart() {
         }
         if (isTake) {
           const { takeProfit } = calcPercentsFromEntry(
-            entryPriceRef.current!,
+            entry,
             price,
             price
           );
@@ -184,7 +194,7 @@ function Chart() {
         axisFontSize: 12,
         labelValue: getLabelValue(),
         axisLabelFill: `${color}80`,
-        isEditable: true,
+        isEditable: isEditable(),
         annotationLayer: EAnnotationLayer.BelowChart,
       });
     };
@@ -204,7 +214,7 @@ function Chart() {
       });
     };
 
-    const updateAnnotations = (entry: number, stopPrice: number, takePrice?: number) => {
+    const updateAnnotations = (entry: number, stopPrice: number, takePrice: number | null) => {
       console.log('updateAnnotations', entry, stopPrice, takePrice);
       clearAnnotations();
       const tpPrice = takePrice || entry + (entry - stopPrice) * ratio;
@@ -229,9 +239,9 @@ function Chart() {
       const recalculateAll = () => {
         if (!isPosition()) { return; } // если позиция ещё не создана
 
-        const newEntry = entryLine.y1 as number;
-        const newStop = stopLine.y1 as number;
-        const newTp = takeProfitLine.y1 as number;
+        const newEntry = entry as number;
+        const newStop = stopPrice as number;
+        const newTp = tpPrice as number;
         const isLong = newEntry > newStop;
         const pc = calcPercentsFromEntry(newEntry, newStop, newTp);
         // const newTp = newEntry + (newEntry - newStop) * ratio;
@@ -349,10 +359,13 @@ function Chart() {
     const onMouseDown = (e: MouseEvent) => {
       const price = getPriceFromEvent(e);
 
-      if (e.button !== 0) {
+      if (e.button === 0) {
         console.log(price);
+        if (model.hasPosition) {
+          isDraggingRef.current = true;
+        }
       }
-      if (e.button !== 2) { return; }
+      if (e.button !== 2 || model.hasPosition) { return; }
       e.preventDefault();
 
       entryPriceRef.current = price;
@@ -364,7 +377,7 @@ function Chart() {
 
       // Инициализируем аннотации сразу. 
       // На момент нажатия Stop Loss равен Entry (нулевая зона)
-      updateAnnotations(price, price);
+      updateAnnotations(price, price, takePriceRef.current);
 
       console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(model.symbolInfo.tickSize));
     };
@@ -376,10 +389,10 @@ function Chart() {
       const mousePrice = getPriceFromEvent(e);
 
       if (isLong() && mousePrice <= getCurrentPrice() && entryPriceRef.current >= mousePrice) {
-        updateAnnotations(entryPriceRef.current, mousePrice);
+        updateAnnotations(entryPriceRef.current, mousePrice, takePriceRef.current);
       }
       if (!isLong() && mousePrice >= getCurrentPrice() && entryPriceRef.current <= mousePrice) {
-        updateAnnotations(entryPriceRef.current, mousePrice);
+        updateAnnotations(entryPriceRef.current, mousePrice, takePriceRef.current);
       }
     };
 
@@ -451,6 +464,28 @@ function Chart() {
   }, []);
 
   useEffect(() => {
+    const position = model.currentPosition;
+    if (position) {
+      positionDirectionRef.current = position.positionSide;
+      entryPriceRef.current = position.entryPrice;
+      stopPriceRef.current = position.stopLoss.triggerPrice;
+      takePriceRef.current = position.takeProfit.triggerPrice;
+      console.log(
+        position.entryPrice,
+        position.stopLoss.triggerPrice,
+        position.takeProfit.triggerPrice,
+      )
+      setTimeout(() => {
+        updateAnnotationsRef.current(
+          position.entryPrice,
+          position.stopLoss.triggerPrice,
+          position.takeProfit.triggerPrice,
+        );
+      }, 5000)
+    } else {
+      positionDirectionRef.current = null;
+      clearAnnotationsRef.current();
+    }
 
   }, [model.positions])
 

@@ -30,7 +30,7 @@ export type IPosition = {
   openOrderInitialMargin: number;   // маржа под открытые ордера
   positionAmt: number;              // размер позиции
   positionInitialMargin: number;    // начальная маржа позиции
-  positionSide: 'LONG' | 'SHORT' | 'BOTH'; // сторона позиции
+  positionSide: 'LONG' | 'SHORT'; // сторона позиции
   stopLoss: IAlgoOrder;
   symbol: string;                   // торговая пара
   takeProfit: IAlgoOrder;
@@ -39,8 +39,8 @@ export type IPosition = {
 };
 
 export interface IAlgoOrder {
-  actualOrderId: string;
-  actualPrice: string;
+  actualOrderId: number;
+  actualPrice: number;
   algoId: number;
   algoStatus: string;
   algoType: string;
@@ -51,17 +51,17 @@ export interface IAlgoOrder {
   icebergQuantity: number | null;
   orderType: string;
   positionSide: string;
-  price: string;
+  price: number;
   priceMatch: string;
   priceProtect: boolean;
-  quantity: string;
+  quantity: number;
   reduceOnly: boolean;
   selfTradePreventionMode: string;
   side: string;
   symbol: string;
   timeInForce: string;
-  tpOrderType: string;
-  triggerPrice: string;
+  tpOrderType: number;
+  triggerPrice: number;
   triggerTime: number;
   updateTime: number;
   workingType: string;
