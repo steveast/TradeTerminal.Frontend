@@ -78,11 +78,13 @@ export class TerminalModel implements ITerminalModel {
               break;
             case 'positions':
               console.log(data)
-              this.positions = data.map((x: IPosition) => ({
-                ...roundNumbers(x, this.symbolInfo.tickSize),
-                takeProfit: roundNumbers(x.takeProfit, this.symbolInfo.tickSize),
-                stopLoss: roundNumbers(x.stopLoss, this.symbolInfo.tickSize),
-              }));
+              runInAction(() => {
+                this.positions = data.map((x: IPosition) => ({
+                  ...roundNumbers(x, this.symbolInfo.tickSize),
+                  takeProfit: roundNumbers(x.takeProfit, this.symbolInfo.tickSize),
+                  stopLoss: roundNumbers(x.stopLoss, this.symbolInfo.tickSize),
+                }));
+              });
               break;
             case 'status':
               this.status = data;

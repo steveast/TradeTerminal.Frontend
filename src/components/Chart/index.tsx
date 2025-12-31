@@ -13,7 +13,7 @@ import {
   binanceSocketClient,
   TRealtimePriceBar,
 } from '../vendor/binance/binanceSocketClient';
-import { createCandlestickChart } from '../vendor/chart/createCandlestickChart';
+import { createCandlestickChart } from './createCandlestickChart';
 import {
   HorizontalLineAnnotation,
   BoxAnnotation,

@@ -25,8 +25,8 @@ import {
   ZoomExtentsModifier,
   ZoomPanModifier,
 } from 'scichart';
-import { appTheme } from '../themeChart';
-import { TPriceBar } from '../binance/binanceRestClient';
+import { appTheme } from './themeChart';
+import { TPriceBar } from '../vendor/binance/binanceRestClient';
 import { VolumePaletteProvider } from './VolumePaletteProvider';
 
 export const createCandlestickChart = async (rootElement: string | HTMLDivElement) => {
