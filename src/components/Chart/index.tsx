@@ -461,6 +461,7 @@ function Chart() {
         onInit={(initResult: TResolvedReturnType<typeof initChart>) => {
           const { subscription, cleanup } = initResult;
 
+          model.commit({ isGraphReady: true });
           return () => {
             subscription.unsubscribe();
             cleanup?.();
