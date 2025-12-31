@@ -108,7 +108,7 @@ export class TerminalModel implements ITerminalModel {
               })
 
               break;
-            case 'openTpAndSl':
+            case 'openedTpAndSl':
               this.modifyStrategy({
                 entryPrice: this.currentPosition?.entryPrice,
                 takeProfit: data.takeProfit.triggerPrice,
@@ -193,7 +193,7 @@ export class TerminalModel implements ITerminalModel {
 
   public getOpenTpAndSl() {
     this.send({
-      type: 'openTpAndSl',
+      type: 'openedTpSl',
       payload: {
         symbol: this.symbol,
         positionSide: this.strategy.positionSide,
@@ -230,6 +230,38 @@ export class TerminalModel implements ITerminalModel {
       type: 'strategy',
       payload: toJS(this.strategy),
     });
+  }
+
+  public updateStrategy() {
+    if (this.currentPosition) {
+      const tpChanged = this.strategy.takeProfit !== this.currentPosition.takeProfit.triggerPrice;
+      const slChanged = this.strategy.stopLoss !== this.currentPosition.stopLoss.triggerPrice;
+      if (tpChanged) {
+        this.send({
+          type: 'tp:modify',
+          payload: toJS({
+            symbol: this.symbol,
+            algoId: this.currentPosition!.takeProfit.algoId,
+            newTriggerPrice: this.strategy.takeProfit,
+            positionSide: this.strategy.positionSide,
+          }),
+        });
+      }
+      if (slChanged) {
+        this.send({
+          type: 'sl:modify',
+          payload: toJS({
+            symbol: this.symbol,
+            algoId: this.currentPosition!.stopLoss.algoId,
+            newTriggerPrice: this.strategy.stopLoss,
+            positionSide: this.strategy.positionSide,
+          }),
+        });
+      }
+      if (!tpChanged && !slChanged) {
+        this.getPositions();
+      }
+    }
   }
 
   @action.bound

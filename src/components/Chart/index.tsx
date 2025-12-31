@@ -358,7 +358,7 @@ function Chart() {
       const isMouseRight = e.button === 2;
 
       if (isMouseLeft) {
-        console.log(price, isDraggingRef.current);
+        // console.log(price, isDraggingRef.current);
       }
       if (isMouseRight && !model.hasPosition) {
         e.preventDefault();
@@ -468,7 +468,15 @@ function Chart() {
       positionDirectionRef.current = null;
       clearAnnotationsRef.current();
     }
-  }, [model.positions])
+  }, [model.positions]);
+
+  // useEffect(() => {
+  //   updateAnnotationsRef.current(
+  //     model.strategy.entryPrice,
+  //     model.strategy.stopLoss,
+  //     model.strategy.takeProfit,
+  //   );
+  // }, [model.strategy]);
 
   return (
     <div style={{ height: '100vh', display: 'flex', position: 'relative' }}>

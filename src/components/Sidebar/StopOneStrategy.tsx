@@ -1,5 +1,5 @@
 import { useModels } from '@app/models';
-import { Button, Slider, Stack, TextInput } from '@mantine/core';
+import { Button, NumberInput, Slider, Stack } from '@mantine/core';
 import { observer } from 'mobx-react-lite';
 
 function StopOneStrategy() {
@@ -29,7 +29,7 @@ function StopOneStrategy() {
         }}
       />
 
-      <TextInput
+      <NumberInput
         label="Size"
         placeholder="Position size..."
         radius="xs"
@@ -38,21 +38,25 @@ function StopOneStrategy() {
         value={model.strategy.usdAmount}
       />
 
-      <TextInput
+      <NumberInput
         label="Stop"
         placeholder="Stop loss..."
         radius="xs"
         size="xs"
+        disabled={model.hasPosition}
         variant="filled"
+        // onChange={(v) => model.modifyStrategy({ stopLoss: Number(v) })}
         value={model.strategy.stopLoss}
       />
 
-      <TextInput
+      <NumberInput
         label="Take"
         placeholder="Take profit..."
         radius="xs"
         size="xs"
+        max={model.hasPosition ? model.currentPrice : undefined}
         variant="filled"
+        // onChange={(v) => model.modifyStrategy({ takeProfit: Number(v) })}
         value={model.strategy.takeProfit}
       />
 
@@ -62,10 +66,10 @@ function StopOneStrategy() {
         size="xs"
         variant="filled"
         onClick={() => {
-          model.runStrategy();
+          model.hasPosition ? model.updateStrategy() : model.runStrategy();
         }}
       >
-        Create strategy
+        {model.hasPosition ? 'Update strategy' : 'Create strategy'}
       </Button>
     </Stack>
   );

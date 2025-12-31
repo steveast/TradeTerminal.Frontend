@@ -16,6 +16,21 @@ const Terminal = () => {
     }
   }, [model.connected, model.isGraphReady]);
 
+  useEffect(() => {
+    if (model.currentPosition) {
+      model.setStrategy({
+        positionSide: model.currentPosition.positionSide,
+        entryPrice: model.currentPosition.entryPrice,
+        stopLoss: model.currentPosition.stopLoss.triggerPrice,
+        takeProfit: model.currentPosition.takeProfit.triggerPrice,
+      });
+    }
+  }, [model.positions]);
+
+  useEffect(() => {
+    document.title = `${model.symbol} Terminal`;
+  }, [model.symbol])
+
   return (
     <Group gap={0} align="top" wrap="nowrap">
       <Chart />

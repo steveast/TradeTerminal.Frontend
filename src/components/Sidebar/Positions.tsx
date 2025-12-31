@@ -1,5 +1,5 @@
 import { useModels } from '@app/models';
-import { Box, Group, RingProgress, Stack, Text } from '@mantine/core';
+import { Group, RingProgress, Stack, Text } from '@mantine/core';
 import { IconArrowsCross, IconCoinBitcoin, IconLockBitcoin } from '@tabler/icons-react';
 import { observer } from 'mobx-react-lite';
 
