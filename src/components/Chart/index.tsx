@@ -26,15 +26,12 @@ import { observer } from 'mobx-react-lite';
 import { useModels } from '@app/models';
 import { calcPercentsFromEntry } from '@app/utils/calcPercentsFromEntry';
 
-interface IChart {
-}
-
 const SYMBOL = 'BTCUSDT';
 const TIMEFRAME = '4h';
 const INITIAL_LIMIT = 1000;
 const VISIBLE_HOURS = 200;
 
-function Chart(props: IChart) {
+function Chart() {
   const { terminalModel: model } = useModels();
 
   const colorLong = '#00ff00';
@@ -42,8 +39,7 @@ function Chart(props: IChart) {
   const colorTake = '#d4ff00';
   const ratio = 3;
 
-  const updateAnnotationsRef = useRef<(entry: number, stop: number, take: number | null) => void>(() => { });
-  const clearAnnotationsRef = useRef<() => void>(() => { });
+  const updateAnnotationsRef = useRef<(entry: number, stop: number) => void>(() => { });
 
   const entryAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const stopAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
@@ -52,16 +48,11 @@ function Chart(props: IChart) {
 
   const isDraggingRef = useRef(false);
   const entryPriceRef = useRef<number | null>(null);
-  const stopPriceRef = useRef<number | null>(null);
-  const takePriceRef = useRef<number | null>(null);
   const currentPriceRef = useRef<number>(0);
-  const positionDirectionRef = useRef<'LONG' | 'SHORT' | null>(
-    model.currentPosition?.positionSide || null
-  );
+  const positionDirectionRef = useRef<'LONG' | 'SHORT' | null>(null);
 
   const isPosition = () => Boolean(positionDirectionRef.current);
   const isLong = () => positionDirectionRef.current === 'LONG';
-  const isShort = () => positionDirectionRef.current === 'SHORT';
   const getCurrentPrice = () => currentPriceRef.current;
   const setCurrentPrice = (currentPrice: number) => {
     currentPriceRef.current = currentPrice;
@@ -124,7 +115,6 @@ function Chart(props: IChart) {
         }
       });
     };
-    clearAnnotationsRef.current = clearAnnotations;
 
     const createHorizontalLine = (price: number, label: string, entry: number, stop: number) => {
       const isLong = entry > stop;
@@ -133,10 +123,6 @@ function Chart(props: IChart) {
       const isTake = label === 'Take profit';
       const color = isEntry ? colorLong : (isStop ? colorShort : colorTake);
       let labelPlacement;
-      const isEditable = () => {
-        if (isEntry && model.hasPosition) { return false; }
-        return true;
-      }
 
       if (!isStop) {
         if (isLong) {
@@ -170,7 +156,7 @@ function Chart(props: IChart) {
 
         if (isStop) {
           const { stop } = calcPercentsFromEntry(
-            entry,
+            entryPriceRef.current!,
             price,
             price
           );
@@ -178,7 +164,7 @@ function Chart(props: IChart) {
         }
         if (isTake) {
           const { takeProfit } = calcPercentsFromEntry(
-            entry,
+            entryPriceRef.current!,
             price,
             price
           );
@@ -198,7 +184,7 @@ function Chart(props: IChart) {
         axisFontSize: 12,
         labelValue: getLabelValue(),
         axisLabelFill: `${color}80`,
-        isEditable: isEditable(),
+        isEditable: true,
         annotationLayer: EAnnotationLayer.BelowChart,
       });
     };
@@ -218,7 +204,8 @@ function Chart(props: IChart) {
       });
     };
 
-    const updateAnnotations = (entry: number, stopPrice: number, takePrice: number | null) => {
+    const updateAnnotations = (entry: number, stopPrice: number, takePrice?: number) => {
+      console.log('updateAnnotations', entry, stopPrice, takePrice);
       clearAnnotations();
       const tpPrice = takePrice || entry + (entry - stopPrice) * ratio;
 
@@ -242,9 +229,9 @@ function Chart(props: IChart) {
       const recalculateAll = () => {
         if (!isPosition()) { return; } // если позиция ещё не создана
 
-        const newEntry = entry as number;
-        const newStop = stopPrice as number;
-        const newTp = tpPrice as number;
+        const newEntry = entryLine.y1 as number;
+        const newStop = stopLine.y1 as number;
+        const newTp = takeProfitLine.y1 as number;
         const isLong = newEntry > newStop;
         const pc = calcPercentsFromEntry(newEntry, newStop, newTp);
         // const newTp = newEntry + (newEntry - newStop) * ratio;
@@ -293,14 +280,14 @@ function Chart(props: IChart) {
             if (isLong() && currentStopY >= currentPrice) {
               stopLine.y1 = currentPrice;
             }
-            if (isShort() && currentStopY <= currentPrice) {
+            if (!isLong() && currentStopY <= currentPrice) {
               stopLine.y1 = currentPrice;
             }
           } else {
             if (isLong() && currentStopY >= entryY) {
               stopLine.y1 = entryY;
             }
-            if (isShort() && currentStopY <= entryY) {
+            if (!isLong() && currentStopY <= entryY) {
               stopLine.y1 = entryY;
             }
           }
@@ -362,23 +349,22 @@ function Chart(props: IChart) {
     const onMouseDown = (e: MouseEvent) => {
       const price = getPriceFromEvent(e);
 
-      if (e.button === 0) {
-        isDraggingRef.current = true;
+      if (e.button !== 0) {
+        console.log(price);
       }
-      if (e.button !== 2 || model.hasPosition) { return; }
+      if (e.button !== 2) { return; }
       e.preventDefault();
 
       entryPriceRef.current = price;
       isDraggingRef.current = true;
 
-      if (!model.hasPosition) {
-        positionDirectionRef.current = price > currentPriceRef.current ? 'SHORT' : 'LONG';
-      }
+      // Очищаем старое, если было
+      positionDirectionRef.current = price > currentPriceRef.current ? 'SHORT' : 'LONG';
       clearAnnotations();
 
       // Инициализируем аннотации сразу. 
       // На момент нажатия Stop Loss равен Entry (нулевая зона)
-      updateAnnotations(price, price, takePriceRef.current);
+      updateAnnotations(price, price);
 
       console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(model.symbolInfo.tickSize));
     };
@@ -386,26 +372,15 @@ function Chart(props: IChart) {
     // Внутри onMouseMove
     const onMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current || entryPriceRef.current === null) { return; }
+
       const mousePrice = getPriceFromEvent(e);
 
-      console.log(
-        isLong(),
-        mousePrice, getCurrentPrice(), entryPriceRef.current, mousePrice
-      )
-
-      if (isPosition()) {
-        if (isLong() && mousePrice <= getCurrentPrice()) {
-          updateAnnotations(entryPriceRef.current, mousePrice, null);
-        }
-      } else {
-        if (isLong() && mousePrice <= getCurrentPrice() && entryPriceRef.current >= mousePrice) {
-          updateAnnotations(entryPriceRef.current, mousePrice, null);
-        }
-        if (!isLong() && mousePrice >= getCurrentPrice() && entryPriceRef.current <= mousePrice) {
-          updateAnnotations(entryPriceRef.current, mousePrice, null);
-        }
+      if (isLong() && mousePrice <= getCurrentPrice() && entryPriceRef.current >= mousePrice) {
+        updateAnnotations(entryPriceRef.current, mousePrice);
       }
-
+      if (!isLong() && mousePrice >= getCurrentPrice() && entryPriceRef.current <= mousePrice) {
+        updateAnnotations(entryPriceRef.current, mousePrice);
+      }
     };
 
     const onMouseUpOrLeave = () => {
@@ -416,9 +391,9 @@ function Chart(props: IChart) {
 
         if (finalStop !== undefined && finalTp !== undefined) {
           // Определяем и фиксируем направление позиции
-          if (finalEntry > finalStop && !model.hasPosition) {
+          if (finalEntry > finalStop) {
             positionDirectionRef.current = 'LONG';
-          } else if (finalEntry < finalStop && !model.hasPosition) {
+          } else if (finalEntry < finalStop) {
             positionDirectionRef.current = 'SHORT';
           } else {
             // Если Stop на Entry — позиция невалидна, сбрасываем
@@ -476,21 +451,6 @@ function Chart(props: IChart) {
   }, []);
 
   useEffect(() => {
-    const position = model.currentPosition;
-    if (position) {
-      positionDirectionRef.current = position.positionSide;
-      entryPriceRef.current = position.entryPrice;
-      stopPriceRef.current = position.stopLoss.triggerPrice;
-      takePriceRef.current = position.takeProfit.triggerPrice;
-      updateAnnotationsRef.current(
-        position.entryPrice,
-        position.stopLoss.triggerPrice,
-        position.takeProfit.triggerPrice,
-      );
-    } else {
-      positionDirectionRef.current = null;
-      clearAnnotationsRef.current();
-    }
 
   }, [model.positions])
 
@@ -501,7 +461,6 @@ function Chart(props: IChart) {
         onInit={(initResult: TResolvedReturnType<typeof initChart>) => {
           const { subscription, cleanup } = initResult;
 
-          model.commit({ isGraphReady: true });
           return () => {
             subscription.unsubscribe();
             cleanup?.();
