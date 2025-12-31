@@ -327,7 +327,6 @@ function Chart() {
 
     updateAnnotationsRef.current = updateAnnotations;
 
-    // === ПРАВАЯ КНОПКА МЫШИ (на canvas для точности) ===
     const canvas = sciChartSurface.domCanvas2D;
     if (!canvas) {
       console.error('Canvas not found');
@@ -336,47 +335,36 @@ function Chart() {
 
     const getPriceFromEvent = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
-
-      // 1. Получаем физические пиксели (с учетом DPI)
       const pixelRatio = window.devicePixelRatio || 1;
-      const canvasX = (e.clientX - rect.left) * pixelRatio;
       const canvasY = (e.clientY - rect.top) * pixelRatio;
-
-      // 2. Получаем область отрисовки (SeriesViewRect)
       const viewRect = sciChartSurface.seriesViewRect;
-
-      // 3. Вычисляем Y относительно области данных
       // Важно: CoordinateCalculator в 4.x работает с физическими пикселями
       const yInViewRect = canvasY - viewRect.top;
-
       return yAxis.getCurrentCoordinateCalculator().getDataValue(yInViewRect);
     };
 
     const onMouseDown = (e: MouseEvent) => {
       const price = getPriceFromEvent(e);
+      const isMouseLeft = e.button === 0;
+      const isMouseRight = e.button === 2;
 
-      if (e.button !== 0) {
-        console.log(price);
+      if (isMouseLeft) {
+        console.log(price, isDraggingRef.current);
       }
-      if (e.button !== 2 || model.hasPosition) { return; }
-      e.preventDefault();
+      if (isMouseRight && !model.hasPosition) {
+        e.preventDefault();
+        entryPriceRef.current = price;
+        isDraggingRef.current = true;
 
-      entryPriceRef.current = price;
-      isDraggingRef.current = true;
-
-      // Очищаем старое, если было
-      positionDirectionRef.current = price > currentPriceRef.current ? 'SHORT' : 'LONG';
-      clearAnnotations();
-
-      // Инициализируем аннотации сразу. 
-      // На момент нажатия Stop Loss равен Entry (нулевая зона)
-      updateAnnotations(price, price, null);
-
-      console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(model.symbolInfo.tickSize));
+        positionDirectionRef.current = price > currentPriceRef.current ? 'SHORT' : 'LONG';
+        clearAnnotations();
+        updateAnnotations(price, price, null);
+        console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(model.symbolInfo.tickSize));
+      }
     };
 
-    // Внутри onMouseMove
     const onMouseMove = (e: MouseEvent) => {
+      console.log(isDraggingRef.current)
       if (!isDraggingRef.current || entryPriceRef.current === null) { return; }
 
       const mousePrice = getPriceFromEvent(e);
