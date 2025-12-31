@@ -39,7 +39,8 @@ function Chart() {
   const colorTake = '#d4ff00';
   const ratio = 3;
 
-  const updateAnnotationsRef = useRef<(entry: number, stop: number) => void>(() => { });
+  const updateAnnotationsRef = useRef<(entry: number, stop: number, takePrice: number | null) => void>(() => { });
+  const clearAnnotationsRef = useRef<() => void>(() => { });
 
   const entryAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
   const stopAnnotationRef = useRef<HorizontalLineAnnotation | null>(null);
@@ -48,8 +49,12 @@ function Chart() {
 
   const isDraggingRef = useRef(false);
   const entryPriceRef = useRef<number | null>(null);
+  const stopPriceRef = useRef<number | null>(null);
+  const takePriceRef = useRef<number | null>(null);
   const currentPriceRef = useRef<number>(0);
-  const positionDirectionRef = useRef<'LONG' | 'SHORT' | null>(null);
+  const positionDirectionRef = useRef<'LONG' | 'SHORT' | null>(
+    model.currentPosition?.positionSide || null
+  );
 
   const isPosition = () => Boolean(positionDirectionRef.current);
   const isLong = () => positionDirectionRef.current === 'LONG';
@@ -115,6 +120,7 @@ function Chart() {
         }
       });
     };
+    clearAnnotationsRef.current = clearAnnotations;
 
     const createHorizontalLine = (price: number, label: string, entry: number, stop: number) => {
       const isLong = entry > stop;
@@ -204,7 +210,7 @@ function Chart() {
       });
     };
 
-    const updateAnnotations = (entry: number, stopPrice: number, takePrice?: number) => {
+    const updateAnnotations = (entry: number, stopPrice: number, takePrice: number | null) => {
       console.log('updateAnnotations', entry, stopPrice, takePrice);
       clearAnnotations();
       const tpPrice = takePrice || entry + (entry - stopPrice) * ratio;
@@ -364,7 +370,7 @@ function Chart() {
 
       // Инициализируем аннотации сразу. 
       // На момент нажатия Stop Loss равен Entry (нулевая зона)
-      updateAnnotations(price, price);
+      updateAnnotations(price, price, null);
 
       console.log('ПКМ нажата: Entry зафиксирован', price.toFixed(model.symbolInfo.tickSize));
     };
@@ -376,10 +382,10 @@ function Chart() {
       const mousePrice = getPriceFromEvent(e);
 
       if (isLong() && mousePrice <= getCurrentPrice() && entryPriceRef.current >= mousePrice) {
-        updateAnnotations(entryPriceRef.current, mousePrice);
+        updateAnnotations(entryPriceRef.current, mousePrice, null);
       }
       if (!isLong() && mousePrice >= getCurrentPrice() && entryPriceRef.current <= mousePrice) {
-        updateAnnotations(entryPriceRef.current, mousePrice);
+        updateAnnotations(entryPriceRef.current, mousePrice, null);
       }
     };
 
@@ -451,7 +457,26 @@ function Chart() {
   }, []);
 
   useEffect(() => {
-
+    const position = model.currentPosition;
+    if (position) {
+      positionDirectionRef.current = position.positionSide;
+      entryPriceRef.current = position.entryPrice;
+      stopPriceRef.current = position.stopLoss.triggerPrice;
+      takePriceRef.current = position.takeProfit.triggerPrice;
+      console.log(
+        position.entryPrice,
+        position.stopLoss.triggerPrice,
+        position.takeProfit.triggerPrice,
+      )
+      updateAnnotationsRef.current(
+        position.entryPrice,
+        position.stopLoss.triggerPrice,
+        position.takeProfit.triggerPrice,
+      );
+    } else {
+      positionDirectionRef.current = null;
+      clearAnnotationsRef.current();
+    }
   }, [model.positions])
 
   return (
