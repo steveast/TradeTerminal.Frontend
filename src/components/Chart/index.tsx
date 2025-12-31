@@ -358,7 +358,7 @@ function Chart() {
       if (e.button !== 0) {
         console.log(price);
       }
-      if (e.button !== 2) { return; }
+      if (e.button !== 2 || model.hasPosition) { return; }
       e.preventDefault();
 
       entryPriceRef.current = price;
