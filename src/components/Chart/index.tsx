@@ -190,7 +190,7 @@ function Chart() {
         axisFontSize: 12,
         labelValue: getLabelValue(),
         axisLabelFill: `${color}80`,
-        isEditable: true,
+        isEditable: !(isEntry && model.hasPosition),
         annotationLayer: EAnnotationLayer.BelowChart,
       });
     };
@@ -451,11 +451,6 @@ function Chart() {
       entryPriceRef.current = position.entryPrice;
       stopPriceRef.current = position.stopLoss.triggerPrice;
       takePriceRef.current = position.takeProfit.triggerPrice;
-      console.log(
-        position.entryPrice,
-        position.stopLoss.triggerPrice,
-        position.takeProfit.triggerPrice,
-      )
       updateAnnotationsRef.current(
         position.entryPrice,
         position.stopLoss.triggerPrice,
