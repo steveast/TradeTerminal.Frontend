@@ -282,12 +282,21 @@ function Chart() {
         const entryY = entryLine.y1 as number;
 
         if (currentPrice) {
-          if (model.hasPosition) {
-            if (isLong() && currentStopY >= currentPrice) {
-              stopLine.y1 = currentPrice;
-            }
-            if (!isLong() && currentStopY <= currentPrice) {
-              stopLine.y1 = currentPrice;
+          if (model.currentPosition) {
+            if (isLong()) {
+              if (currentStopY >= currentPrice) {
+                stopLine.y1 = currentPrice;
+              }
+              if (currentStopY <= model.currentPosition.stopLoss.triggerPrice) {
+                stopLine.y1 = model.currentPosition.stopLoss.triggerPrice;
+              }
+            } else {
+              if (currentStopY <= currentPrice) {
+                stopLine.y1 = currentPrice;
+              }
+              if (currentStopY >= model.currentPosition.stopLoss.triggerPrice) {
+                stopLine.y1 = model.currentPosition.stopLoss.triggerPrice;
+              }
             }
           } else {
             if (isLong() && currentStopY >= entryY) {
@@ -364,7 +373,6 @@ function Chart() {
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      console.log(isDraggingRef.current)
       if (!isDraggingRef.current || entryPriceRef.current === null) { return; }
 
       const mousePrice = getPriceFromEvent(e);
