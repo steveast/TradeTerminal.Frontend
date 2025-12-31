@@ -8,6 +8,7 @@ import { ArrayQueue, ConstantBackoff, Websocket, WebsocketBuilder } from 'websoc
 interface ITerminalModel {
   currentPrice: number;
   deposit: number;
+  isGraphReady: boolean;
   leverage: number;
   positions: IPosition[];
   strategy: IStrategy;
@@ -44,6 +45,9 @@ export class TerminalModel implements ITerminalModel {
   // Connection
   @observable connected: boolean = false;
   @observable status: 'disconnected' | 'connecting' | 'connected' = 'disconnected';
+
+  // Infrastructure
+  @observable isGraphReady: boolean = false;
 
   // Privates
   private ws: Websocket;

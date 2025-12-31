@@ -9,12 +9,12 @@ const Terminal = () => {
   const { terminalModel: model } = useModels();
 
   useEffect(() => {
-    if (model.connected) {
+    if (model.connected && model.isGraphReady) {
       model.getSymbolInfo();
       model.getAccountInfo();
       model.getPositions();
     }
-  }, [model.connected]);
+  }, [model.connected, model.isGraphReady]);
 
   return (
     <Group gap={0} align="top" wrap="nowrap">

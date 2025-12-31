@@ -26,12 +26,15 @@ import { observer } from 'mobx-react-lite';
 import { useModels } from '@app/models';
 import { calcPercentsFromEntry } from '@app/utils/calcPercentsFromEntry';
 
+interface IChart {
+}
+
 const SYMBOL = 'BTCUSDT';
 const TIMEFRAME = '4h';
 const INITIAL_LIMIT = 1000;
 const VISIBLE_HOURS = 200;
 
-function Chart() {
+function Chart(props: IChart) {
   const { terminalModel: model } = useModels();
 
   const colorLong = '#00ff00';
@@ -58,6 +61,7 @@ function Chart() {
 
   const isPosition = () => Boolean(positionDirectionRef.current);
   const isLong = () => positionDirectionRef.current === 'LONG';
+  const isShort = () => positionDirectionRef.current === 'SHORT';
   const getCurrentPrice = () => currentPriceRef.current;
   const setCurrentPrice = (currentPrice: number) => {
     currentPriceRef.current = currentPrice;
@@ -215,7 +219,6 @@ function Chart() {
     };
 
     const updateAnnotations = (entry: number, stopPrice: number, takePrice: number | null) => {
-      console.log('updateAnnotations', entry, stopPrice, takePrice);
       clearAnnotations();
       const tpPrice = takePrice || entry + (entry - stopPrice) * ratio;
 
@@ -290,14 +293,14 @@ function Chart() {
             if (isLong() && currentStopY >= currentPrice) {
               stopLine.y1 = currentPrice;
             }
-            if (!isLong() && currentStopY <= currentPrice) {
+            if (isShort() && currentStopY <= currentPrice) {
               stopLine.y1 = currentPrice;
             }
           } else {
             if (isLong() && currentStopY >= entryY) {
               stopLine.y1 = entryY;
             }
-            if (!isLong() && currentStopY <= entryY) {
+            if (isShort() && currentStopY <= entryY) {
               stopLine.y1 = entryY;
             }
           }
@@ -359,20 +362,18 @@ function Chart() {
     const onMouseDown = (e: MouseEvent) => {
       const price = getPriceFromEvent(e);
 
-      console.log('model.hasPosition', model.hasPosition)
       if (e.button === 0) {
-        console.log(price);
         isDraggingRef.current = true;
       }
       if (e.button !== 2 || model.hasPosition) { return; }
       e.preventDefault();
-      console.log('onMouseDown!')
 
       entryPriceRef.current = price;
       isDraggingRef.current = true;
 
-      // Очищаем старое, если было
-      positionDirectionRef.current = price > currentPriceRef.current ? 'SHORT' : 'LONG';
+      if (!model.hasPosition) {
+        positionDirectionRef.current = price > currentPriceRef.current ? 'SHORT' : 'LONG';
+      }
       clearAnnotations();
 
       // Инициализируем аннотации сразу. 
@@ -384,23 +385,27 @@ function Chart() {
 
     // Внутри onMouseMove
     const onMouseMove = (e: MouseEvent) => {
-      console.log(isDraggingRef.current, entryPriceRef.current)
       if (!isDraggingRef.current || entryPriceRef.current === null) { return; }
-
       const mousePrice = getPriceFromEvent(e);
 
       console.log(
         isLong(),
-        mousePrice >= getCurrentPrice(),
-        entryPriceRef.current <= mousePrice
+        mousePrice, getCurrentPrice(), entryPriceRef.current, mousePrice
       )
 
-      if (isLong() && mousePrice <= getCurrentPrice() && entryPriceRef.current >= mousePrice) {
-        updateAnnotations(entryPriceRef.current, mousePrice, null);
+      if (isPosition()) {
+        if (isLong() && mousePrice <= getCurrentPrice()) {
+          updateAnnotations(entryPriceRef.current, mousePrice, null);
+        }
+      } else {
+        if (isLong() && mousePrice <= getCurrentPrice() && entryPriceRef.current >= mousePrice) {
+          updateAnnotations(entryPriceRef.current, mousePrice, null);
+        }
+        if (!isLong() && mousePrice >= getCurrentPrice() && entryPriceRef.current <= mousePrice) {
+          updateAnnotations(entryPriceRef.current, mousePrice, null);
+        }
       }
-      if (!isLong() && mousePrice >= getCurrentPrice() && entryPriceRef.current <= mousePrice) {
-        updateAnnotations(entryPriceRef.current, mousePrice, null);
-      }
+
     };
 
     const onMouseUpOrLeave = () => {
@@ -411,9 +416,9 @@ function Chart() {
 
         if (finalStop !== undefined && finalTp !== undefined) {
           // Определяем и фиксируем направление позиции
-          if (finalEntry > finalStop) {
+          if (finalEntry > finalStop && !model.hasPosition) {
             positionDirectionRef.current = 'LONG';
-          } else if (finalEntry < finalStop) {
+          } else if (finalEntry < finalStop && !model.hasPosition) {
             positionDirectionRef.current = 'SHORT';
           } else {
             // Если Stop на Entry — позиция невалидна, сбрасываем
@@ -477,18 +482,11 @@ function Chart() {
       entryPriceRef.current = position.entryPrice;
       stopPriceRef.current = position.stopLoss.triggerPrice;
       takePriceRef.current = position.takeProfit.triggerPrice;
-      console.log(
+      updateAnnotationsRef.current(
         position.entryPrice,
         position.stopLoss.triggerPrice,
         position.takeProfit.triggerPrice,
-      )
-      setTimeout(() => {
-        updateAnnotationsRef.current(
-          position.entryPrice,
-          position.stopLoss.triggerPrice,
-          position.takeProfit.triggerPrice,
-        );
-      }, 2000)
+      );
     } else {
       positionDirectionRef.current = null;
       clearAnnotationsRef.current();
@@ -503,6 +501,7 @@ function Chart() {
         onInit={(initResult: TResolvedReturnType<typeof initChart>) => {
           const { subscription, cleanup } = initResult;
 
+          model.commit({ isGraphReady: true });
           return () => {
             subscription.unsubscribe();
             cleanup?.();
