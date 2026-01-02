@@ -123,7 +123,6 @@ function Chart() {
     clearAnnotationsRef.current = clearAnnotations;
 
     const createHorizontalLine = (price: number, label: string, entry: number, stop: number) => {
-      console.log('createHorizontalLine: ', price, label, entry, stop);
       const isLong = entry > stop;
       const isEntry = label === 'Entry';
       const isStop = label === 'Stop Loss';

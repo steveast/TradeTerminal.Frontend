@@ -122,6 +122,10 @@ export class TerminalModel implements ITerminalModel {
                 this.allOrders = data.all;
               })
               break;
+            case 'cancelAllOrders':
+              console.log('Cancel algo: ', data.algo.map((x: any) => x.msg).join(', '));
+              console.log('Cancel limit: ', data.limit.msg);
+              break;
             case 'error':
               console.error('Ошибка от сервера:', message);
               break;
@@ -191,7 +195,7 @@ export class TerminalModel implements ITerminalModel {
 
   protected send(msg: any) {
     if (this.connected) {
-      console.log('sent: ', msg);
+      console.log('Sent: ', msg);
       this.ws.send(JSON.stringify(msg));
     } else {
       console.warn('WS не подключён — сообщение не отправлено');

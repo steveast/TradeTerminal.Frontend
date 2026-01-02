@@ -14,9 +14,6 @@ export function calcPercentsFromEntry(
   if (entry <= 0) {
     throw new Error('Entry price must be greater than 0');
   }
-  console.log(
-    entry, stop, takeProfit
-  )
 
   const stopPercent =
     -Math.abs(((stop - entry) / entry) * 100);
