@@ -1,10 +1,14 @@
 export interface IStrategy {
+  entryOrderId?: string;
   entryPrice: number;
   positionSide: 'LONG' | 'SHORT',
+  quantity?: string; // in the coin
   side: 'BUY' | 'SELL';
+  slAlgoId?: number;
   stopLoss: number;
   symbol: string; // 'BTCUSDT',
   takeProfit: number;
+  tpAlgoId?: number;
   usdAmount: number;
 }
 

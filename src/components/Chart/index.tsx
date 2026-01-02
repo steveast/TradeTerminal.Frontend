@@ -25,7 +25,6 @@ import {
 import { observer } from 'mobx-react-lite';
 import { useModels } from '@app/models';
 import { calcPercentsFromEntry } from '@app/utils/calcPercentsFromEntry';
-import { toJS } from 'mobx';
 
 const SYMBOL = 'BTCUSDT';
 const TIMEFRAME = '4h';

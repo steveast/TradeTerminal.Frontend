@@ -1,6 +1,6 @@
 import { IAlgoOrder, ILimitOrder, IPosition, IStrategy, ISymbolInfo, IUnrealizedStrategy } from '@app/types/trade';
 import { roundNumbers } from '@app/utils/roundNumbers';
-import { observable, makeObservable, action, runInAction, reaction, toJS, computed } from 'mobx';
+import { observable, makeObservable, action, runInAction, toJS, computed } from 'mobx';
 import { ArrayQueue, ConstantBackoff, Websocket, WebsocketBuilder } from 'websocket-ts';
 
 
@@ -102,6 +102,8 @@ export class TerminalModel implements ITerminalModel {
               break;
             case 'strategy':
               console.log('Strategy created successfully!', data);
+              this.modifyStrategy(data);
+              this.getAllOpenOrders();
               break;
             case 'symbolInfo':
               this.symbolInfo = data;
@@ -331,5 +333,9 @@ export class TerminalModel implements ITerminalModel {
       symbol: this.symbol,
     });
     return this;
+  }
+
+  public async delay(ms: number) {
+    return new Promise<void>(resolve => setTimeout(resolve, ms));
   }
 }

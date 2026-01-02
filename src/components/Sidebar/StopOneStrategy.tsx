@@ -1,10 +1,10 @@
 import { useModels } from '@app/models';
-import delay from '@app/utils/delay';
 import { Button, NumberInput, Slider, Stack } from '@mantine/core';
 import { observer } from 'mobx-react-lite';
 
 function StopOneStrategy() {
   const { terminalModel: model } = useModels();
+  console.log(model.unrealizedStrategy)
 
   return (
     <Stack gap="xs" px="md" pt="md">
@@ -72,14 +72,16 @@ function StopOneStrategy() {
             return;
           }
 
-          if (model.unrealizedStrategy) {
+          if (model.unrealizedStrategy.isFull) {
             model.cancelAllOrders();
-            await delay(2000);
+            await model.delay(2000);
+            model.runStrategy();
+          } else {
             model.runStrategy();
           }
         }}
       >
-        {model.hasPosition || model.unrealizedStrategy ? 'Update strategy' : 'Create strategy'}
+        {model.hasPosition || model.unrealizedStrategy.isFull ? 'Update strategy' : 'Create strategy'}
       </Button>
     </Stack>
   );
