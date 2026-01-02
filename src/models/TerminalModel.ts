@@ -1,4 +1,4 @@
-import { IPosition, IStrategy, ISymbolInfo } from '@app/types/trade';
+import { IAlgoOrder, ILimitOrder, IPosition, IStrategy, ISymbolInfo, IUnrealizedStrategy } from '@app/types/trade';
 import { roundNumbers } from '@app/utils/roundNumbers';
 import { observable, makeObservable, action, runInAction, reaction, toJS, computed } from 'mobx';
 import { ArrayQueue, ConstantBackoff, Websocket, WebsocketBuilder } from 'websocket-ts';
@@ -23,6 +23,10 @@ export class TerminalModel implements ITerminalModel {
   @observable deposit: number = 0;
   @observable leverage: number = 10;
   @observable positions: IPosition[] = [];
+
+  @observable algoOrders: IAlgoOrder[] = [];
+  @observable limitOrders: ILimitOrder[] = [];
+  @observable allOrders: (ILimitOrder & IAlgoOrder)[] = [];
 
   @observable symbolInfo: ISymbolInfo = {
     minQty: 100,
@@ -72,6 +76,10 @@ export class TerminalModel implements ITerminalModel {
         try {
           const { data, type, message }: any = JSON.parse(ev.data);
 
+          if (!data.closeTime) {
+            console.log(`Got ${type}`, data);
+          }
+
           switch (type) {
             case 'candles':
               //setCandle(msg.data);
@@ -93,23 +101,24 @@ export class TerminalModel implements ITerminalModel {
               // setCurrentInterval(msg.interval);
               break;
             case 'strategy':
-              console.log(data);
+              console.log('Strategy created successfully!', data);
               break;
             case 'symbolInfo':
               this.symbolInfo = data;
               break;
             case 'accountInfo':
-              // console.log(Number(data.availableBalance));
               runInAction(() => {
                 const deposit = parseInt(data.availableBalance, 10);
                 this.deposit = deposit;
                 this.modifyStrategy({ usdAmount: this.notional });
               });
               break;
-            case 'orderResult':
-            case 'closeResult':
-              console.log('Результат команды:', data);
-              // обработай как нужно (toast, обнови UI)
+            case 'getAllOpenOrders':
+              runInAction(() => {
+                this.algoOrders = data.algoOrders;
+                this.limitOrders = data.limitOrders;
+                this.allOrders = data.all;
+              })
               break;
             case 'error':
               console.error('Ошибка от сервера:', message);
@@ -153,6 +162,31 @@ export class TerminalModel implements ITerminalModel {
     return this.positions.find((x) => x.symbol === this.symbol);
   }
 
+  @computed
+  public get unrealizedStrategy() {
+    const result: IUnrealizedStrategy = {
+      entry: 0,
+      sl: 0,
+      tp: 0,
+      positionSide: 'LONG',
+      isFull: false,
+    };
+    this.allOrders.forEach((order) => {
+      if (order.orderType === 'TAKE_PROFIT_MARKET') {
+        result.tp = order.triggerPrice;
+      }
+      if (order.orderType === 'STOP_MARKET') {
+        result.sl = order.triggerPrice;
+      }
+      if (order.type === 'LIMIT') {
+        result.entry = order.price;
+        result.positionSide = order.positionSide;
+        result.isFull = Boolean(result.entry && result.tp && result.sl);
+      }
+    });
+    return result;
+  }
+
   protected send(msg: any) {
     if (this.connected) {
       console.log('sent: ', msg);
@@ -180,6 +214,12 @@ export class TerminalModel implements ITerminalModel {
   public getPositions() {
     this.send({
       type: 'getPositions'
+    });
+  }
+
+  public getAllOpenOrders() {
+    this.send({
+      type: 'getAllOpenOrders'
     });
   }
 
@@ -271,6 +311,13 @@ export class TerminalModel implements ITerminalModel {
         ...this.strategy,
         ...payload,
       };
+    });
+  }
+
+  public cancelAllOrders() {
+    this.send({
+      type: 'cancelAllOrders',
+      symbol: this.symbol,
     });
   }
 }

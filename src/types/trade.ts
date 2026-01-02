@@ -8,6 +8,14 @@ export interface IStrategy {
   usdAmount: number;
 }
 
+export interface IUnrealizedStrategy {
+  entry: number;
+  isFull: boolean;
+  positionSide: 'LONG' | 'SHORT';
+  sl: number;
+  tp: number;
+}
+
 export interface ISymbolInfo {
   minQty: number;
   precision: number;
@@ -67,3 +75,29 @@ export interface IAlgoOrder {
   workingType: string;
 }
 
+export interface ILimitOrder {
+  avgPrice: number;
+  clientOrderId: string;
+  closePosition: boolean;
+  cumQuote: number;
+  executedQty: number;
+  goodTillDate: number;
+  orderId: number;
+  origQty: number;
+  origType: string;
+  positionSide: 'LONG' | 'SHORT';
+  price: number;
+  priceMatch: 'NONE' | 'OPPONENT' | 'QUEUE';
+  priceProtect: boolean;
+  reduceOnly: boolean;
+  selfTradePreventionMode: 'EXPIRE_MAKER' | 'NONE';
+  side: 'BUY' | 'SELL';
+  status: 'NEW' | 'PARTIALLY_FILLED' | 'FILLED' | 'CANCELED' | 'EXPIRED';
+  stopPrice: number;
+  symbol: string;
+  time: number;
+  timeInForce: 'GTC' | 'IOC' | 'FOK';
+  type: 'LIMIT' | 'MARKET' | 'STOP' | 'TAKE_PROFIT';
+  updateTime: number;
+  workingType: 'MARK_PRICE' | 'CONTRACT_PRICE';
+}

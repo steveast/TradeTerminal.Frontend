@@ -13,6 +13,7 @@ const Terminal = () => {
       model.getSymbolInfo();
       model.getAccountInfo();
       model.getPositions();
+      model.getAllOpenOrders();
     }
   }, [model.connected, model.isGraphReady]);
 
@@ -29,7 +30,7 @@ const Terminal = () => {
 
   useEffect(() => {
     document.title = `${model.symbol} Terminal`;
-  }, [model.symbol])
+  }, [model.symbol]);
 
   return (
     <Group gap={0} align="top" wrap="nowrap">

@@ -66,7 +66,11 @@ function StopOneStrategy() {
         size="xs"
         variant="filled"
         onClick={() => {
-          model.hasPosition ? model.updateStrategy() : model.runStrategy();
+          if (model.hasPosition) {
+            model.updateStrategy();
+          } else {
+            model.runStrategy();
+          }
         }}
       >
         {model.hasPosition ? 'Update strategy' : 'Create strategy'}

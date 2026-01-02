@@ -25,6 +25,7 @@ import {
 import { observer } from 'mobx-react-lite';
 import { useModels } from '@app/models';
 import { calcPercentsFromEntry } from '@app/utils/calcPercentsFromEntry';
+import { toJS } from 'mobx';
 
 const SYMBOL = 'BTCUSDT';
 const TIMEFRAME = '4h';
@@ -123,6 +124,7 @@ function Chart() {
     clearAnnotationsRef.current = clearAnnotations;
 
     const createHorizontalLine = (price: number, label: string, entry: number, stop: number) => {
+      console.log('createHorizontalLine: ', price, label, entry, stop);
       const isLong = entry > stop;
       const isEntry = label === 'Entry';
       const isStop = label === 'Stop Loss';
@@ -357,8 +359,9 @@ function Chart() {
       const isMouseLeft = e.button === 0;
       const isMouseRight = e.button === 2;
 
-      if (isMouseLeft) {
+      if (isMouseLeft && model.allOrders.length && !model.hasPosition) {
         // console.log(price, isDraggingRef.current);
+        isDraggingRef.current = true;
       }
       if (isMouseRight && !model.hasPosition) {
         e.preventDefault();
@@ -469,6 +472,23 @@ function Chart() {
       clearAnnotationsRef.current();
     }
   }, [model.positions]);
+
+  useEffect(() => {
+    if (!model.hasPosition) {
+      const { entry, sl, tp, positionSide, isFull } = model.unrealizedStrategy;
+      if (isFull) {
+        positionDirectionRef.current = positionSide;
+        entryPriceRef.current = entry;
+        stopPriceRef.current = sl;
+        takePriceRef.current = tp;
+        updateAnnotationsRef.current(
+          entry,
+          sl,
+          tp,
+        );
+      }
+    }
+  }, [model.allOrders]);
 
   // useEffect(() => {
   //   updateAnnotationsRef.current(
