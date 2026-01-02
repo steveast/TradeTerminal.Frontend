@@ -33,6 +33,17 @@ const Terminal = () => {
     document.title = `${model.symbol} Terminal`;
   }, [model.symbol]);
 
+  useEffect(() => {
+    if (model.unrealizedStrategy.isFull && !model.strategy.entryPrice) {
+      model.setStrategy({
+        entryPrice: model.unrealizedStrategy.entry,
+        positionSide: model.unrealizedStrategy.positionSide,
+        stopLoss: model.unrealizedStrategy.sl,
+        takeProfit: model.unrealizedStrategy.tp,
+      });
+    }
+  }, [model.unrealizedStrategy.isFull])
+
   return (
     <Group gap={0} align="top" wrap="nowrap">
       <Chart />

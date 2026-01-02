@@ -37,7 +37,7 @@ export class TerminalModel implements ITerminalModel {
   };
 
   @observable strategy: IStrategy = {
-    entryPrice: this.currentPrice,
+    entryPrice: 0,
     positionSide: 'LONG',
     side: 'BUY',
     stopLoss: -(this.currentPrice * 0.09),
@@ -129,6 +129,9 @@ export class TerminalModel implements ITerminalModel {
             case 'cancelAllOrders':
               console.log('Cancel algo: ', data.algo.map((x: any) => x.msg).join(', '));
               console.log('Cancel limit: ', data.limit.msg);
+              break;
+            case 'cancelOrder':
+              this.getAllOpenOrders();
               break;
             case 'error':
               console.error('Ошибка от сервера:', message);
@@ -333,5 +336,41 @@ export class TerminalModel implements ITerminalModel {
       type: 'cancelAllOrders',
       symbol: this.symbol,
     });
+  }
+
+  public cancelOrder({
+    orderId,
+    clientOrderId
+  }: {
+    clientOrderId?: string;
+    orderId?: number | string;
+  }) {
+    return this.send({
+      type: 'cancelOrder',
+      symbol: this.symbol,
+      orderId,
+      clientOrderId,
+    });
+  }
+
+  public cancelAlgoOrder(algoId: number) {
+    return this.send({
+      type: 'cancelAlgoOrder',
+      algoId,
+    });
+  }
+
+  @action
+  public removeOrder(id: string | number) {
+    this.allOrders = this.allOrders.filter((x) => {
+      return x.algoId !== id && x.clientOrderId !== id;
+    });
+    this.limitOrders = this.limitOrders.filter((x) => {
+      return x.clientOrderId !== id;
+    });
+    this.algoOrders = this.algoOrders.filter((x) => {
+      return x.algoId !== id;
+    });
+    return this;
   }
 }
