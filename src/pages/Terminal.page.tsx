@@ -24,6 +24,9 @@ const Terminal = () => {
         stopLoss: model.currentPosition.stopLoss.triggerPrice,
         takeProfit: model.currentPosition.takeProfit.triggerPrice,
       });
+    } else {
+      model.getOpenTpAndSl('LONG');
+      model.getOpenTpAndSl('SHORT');
     }
   }, [model.positions]);
 

@@ -77,7 +77,6 @@ export class TerminalModel implements ITerminalModel {
               //setCandle(msg.data);
               break;
             case 'positions':
-              console.log(data)
               runInAction(() => {
                 this.positions = data.map((x: IPosition) => ({
                   ...roundNumbers(x, this.symbolInfo.tickSize),
@@ -105,14 +104,6 @@ export class TerminalModel implements ITerminalModel {
                 const deposit = parseInt(data.availableBalance, 10);
                 this.deposit = deposit;
                 this.modifyStrategy({ usdAmount: this.notional });
-              })
-
-              break;
-            case 'openedTpAndSl':
-              this.modifyStrategy({
-                entryPrice: this.currentPosition?.entryPrice,
-                takeProfit: data.takeProfit.triggerPrice,
-                stopLoss: data.stopLoss.triggerPrice,
               });
               break;
             case 'orderResult':
@@ -164,6 +155,7 @@ export class TerminalModel implements ITerminalModel {
 
   protected send(msg: any) {
     if (this.connected) {
+      console.log('sent: ', msg);
       this.ws.send(JSON.stringify(msg));
     } else {
       console.warn('WS не подключён — сообщение не отправлено');
@@ -188,16 +180,6 @@ export class TerminalModel implements ITerminalModel {
   public getPositions() {
     this.send({
       type: 'getPositions'
-    });
-  }
-
-  public getOpenTpAndSl() {
-    this.send({
-      type: 'openedTpSl',
-      payload: {
-        symbol: this.symbol,
-        positionSide: this.strategy.positionSide,
-      }
     });
   }
 
