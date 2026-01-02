@@ -181,9 +181,9 @@ export class TerminalModel implements ITerminalModel {
       if (order.type === 'LIMIT') {
         result.entry = order.price;
         result.positionSide = order.positionSide;
-        result.isFull = Boolean(result.entry && result.tp && result.sl);
       }
     });
+    result.isFull = Boolean(result.entry && result.tp && result.sl);
     return result;
   }
 

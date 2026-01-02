@@ -68,12 +68,13 @@ function StopOneStrategy() {
         onClick={() => {
           if (model.hasPosition) {
             model.updateStrategy();
-          } else {
+          } else if (model.unrealizedStrategy) {
+            model.cancelAllOrders();
             model.runStrategy();
           }
         }}
       >
-        {model.hasPosition ? 'Update strategy' : 'Create strategy'}
+        {model.hasPosition || model.unrealizedStrategy ? 'Update strategy' : 'Create strategy'}
       </Button>
     </Stack>
   );
