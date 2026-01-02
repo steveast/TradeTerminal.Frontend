@@ -73,9 +73,8 @@ function StopOneStrategy() {
           }
 
           if (model.unrealizedStrategy.isFull) {
-            model.cancelAllOrders();
-            await model.delay(2000);
-            model.runStrategy();
+            await model.cancelAllOrders();
+            await model.runStrategy();
           } else {
             model.runStrategy();
           }

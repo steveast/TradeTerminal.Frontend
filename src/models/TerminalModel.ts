@@ -2,6 +2,7 @@ import { IAlgoOrder, ILimitOrder, IPosition, IStrategy, ISymbolInfo, IUnrealized
 import { roundNumbers } from '@app/utils/roundNumbers';
 import { observable, makeObservable, action, runInAction, toJS, computed } from 'mobx';
 import { ArrayQueue, ConstantBackoff, Websocket, WebsocketBuilder } from 'websocket-ts';
+import LoaderModel from './LoaderModel';
 
 
 
@@ -55,6 +56,7 @@ export class TerminalModel implements ITerminalModel {
 
   // Privates
   private ws: Websocket;
+  private loader = new LoaderModel();
 
   constructor() {
     makeObservable(this);
@@ -130,6 +132,7 @@ export class TerminalModel implements ITerminalModel {
               console.error('Ошибка от сервера:', message);
               break;
           }
+          this.loader.resolve(type, data);
         } catch (e) {
           console.warn('Не удалось распарсить сообщение:', ev.data);
         }
@@ -197,45 +200,40 @@ export class TerminalModel implements ITerminalModel {
     if (this.connected) {
       console.log('Sent: ', msg);
       this.ws.send(JSON.stringify(msg));
-    } else {
-      console.warn('WS не подключён — сообщение не отправлено');
+      return this.loader.add(msg.type);
     }
-    return this;
+    return Promise.resolve();
   }
 
   public getSymbolInfo() {
-    this.send({
+    return this.send({
       type: 'symbolInfo',
       payload: {
         symbol: this.symbol,
       },
     });
-    return this;
   }
 
   public getAccountInfo() {
-    this.send({
+    return this.send({
       type: 'accountInfo',
     });
-    return this;
   }
 
   public getPositions() {
-    this.send({
+    return this.send({
       type: 'getPositions'
     });
-    return this;
   }
 
   public getAllOpenOrders() {
-    this.send({
+    return this.send({
       type: 'getAllOpenOrders'
     });
-    return this;
   }
 
   public marketBuy(usdAmount: number) {
-    this.send({
+    return this.send({
       type: 'marketOrder',
       payload: {
         symbol: this.symbol,
@@ -244,11 +242,10 @@ export class TerminalModel implements ITerminalModel {
         positionSide: 'LONG',
       },
     });
-    return this;
   }
 
   public marketSell(usdAmount: number) {
-    this.send({
+    return this.send({
       type: 'marketOrder',
       payload: {
         symbol: this.symbol,
@@ -257,15 +254,13 @@ export class TerminalModel implements ITerminalModel {
         positionSide: 'SHORT',
       },
     });
-    return this;
   }
 
   public runStrategy() {
-    this.send({
+    return this.send({
       type: 'strategy',
       payload: toJS(this.strategy),
     });
-    return this;
   }
 
   public updateStrategy() {
@@ -332,14 +327,9 @@ export class TerminalModel implements ITerminalModel {
   }
 
   public cancelAllOrders() {
-    this.send({
+    return this.send({
       type: 'cancelAllOrders',
       symbol: this.symbol,
     });
-    return this;
-  }
-
-  public async delay(ms: number) {
-    return new Promise<void>(resolve => setTimeout(resolve, ms));
   }
 }
