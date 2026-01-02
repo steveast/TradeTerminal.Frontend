@@ -194,6 +194,7 @@ export class TerminalModel implements ITerminalModel {
     } else {
       console.warn('WS не подключён — сообщение не отправлено');
     }
+    return this;
   }
 
   public getSymbolInfo() {
@@ -203,24 +204,28 @@ export class TerminalModel implements ITerminalModel {
         symbol: this.symbol,
       },
     });
+    return this;
   }
 
   public getAccountInfo() {
     this.send({
       type: 'accountInfo',
     });
+    return this;
   }
 
   public getPositions() {
     this.send({
       type: 'getPositions'
     });
+    return this;
   }
 
   public getAllOpenOrders() {
     this.send({
       type: 'getAllOpenOrders'
     });
+    return this;
   }
 
   public marketBuy(usdAmount: number) {
@@ -233,6 +238,7 @@ export class TerminalModel implements ITerminalModel {
         positionSide: 'LONG',
       },
     });
+    return this;
   }
 
   public marketSell(usdAmount: number) {
@@ -245,6 +251,7 @@ export class TerminalModel implements ITerminalModel {
         positionSide: 'SHORT',
       },
     });
+    return this;
   }
 
   public runStrategy() {
@@ -252,6 +259,7 @@ export class TerminalModel implements ITerminalModel {
       type: 'strategy',
       payload: toJS(this.strategy),
     });
+    return this;
   }
 
   public updateStrategy() {
@@ -284,6 +292,7 @@ export class TerminalModel implements ITerminalModel {
         this.getPositions();
       }
     }
+    return this;
   }
 
   @action.bound
@@ -302,6 +311,7 @@ export class TerminalModel implements ITerminalModel {
       usdAmount: usdAmount * this.leverage,
       ...payload,
     };
+    return this;
   }
 
   @action.bound
@@ -312,6 +322,7 @@ export class TerminalModel implements ITerminalModel {
         ...payload,
       };
     });
+    return this;
   }
 
   public cancelAllOrders() {
@@ -319,5 +330,6 @@ export class TerminalModel implements ITerminalModel {
       type: 'cancelAllOrders',
       symbol: this.symbol,
     });
+    return this;
   }
 }

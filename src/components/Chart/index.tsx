@@ -476,7 +476,7 @@ function Chart() {
   useEffect(() => {
     if (!model.hasPosition) {
       const { entry, sl, tp, positionSide, isFull } = model.unrealizedStrategy;
-      console.log('entry, sl, tp, positionSide, isFull', entry, sl, tp, positionSide, isFull)
+
       if (isFull) {
         positionDirectionRef.current = positionSide;
         entryPriceRef.current = entry;

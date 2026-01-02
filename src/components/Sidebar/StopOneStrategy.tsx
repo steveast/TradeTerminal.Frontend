@@ -1,4 +1,5 @@
 import { useModels } from '@app/models';
+import delay from '@app/utils/delay';
 import { Button, NumberInput, Slider, Stack } from '@mantine/core';
 import { observer } from 'mobx-react-lite';
 
@@ -65,11 +66,15 @@ function StopOneStrategy() {
         radius="xs"
         size="xs"
         variant="filled"
-        onClick={() => {
+        onClick={async () => {
           if (model.hasPosition) {
             model.updateStrategy();
-          } else if (model.unrealizedStrategy) {
+            return;
+          }
+
+          if (model.unrealizedStrategy) {
             model.cancelAllOrders();
+            await delay(2000);
             model.runStrategy();
           }
         }}
