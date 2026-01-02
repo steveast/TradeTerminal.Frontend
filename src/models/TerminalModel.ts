@@ -54,9 +54,11 @@ export class TerminalModel implements ITerminalModel {
   // Infrastructure
   @observable isGraphReady: boolean = false;
 
+  // Sub models
+  public loader = new LoaderModel();
+
   // Privates
   private ws: Websocket;
-  private loader = new LoaderModel();
 
   constructor() {
     makeObservable(this);

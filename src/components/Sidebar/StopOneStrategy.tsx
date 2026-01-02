@@ -4,7 +4,6 @@ import { observer } from 'mobx-react-lite';
 
 function StopOneStrategy() {
   const { terminalModel: model } = useModels();
-  console.log(model.unrealizedStrategy)
 
   return (
     <Stack gap="xs" px="md" pt="md">
@@ -65,6 +64,7 @@ function StopOneStrategy() {
         mt="sm"
         radius="xs"
         size="xs"
+        loading={model.loader.has(['cancelAllOrders', 'runStrategy'])}
         variant="filled"
         onClick={async () => {
           if (model.hasPosition) {

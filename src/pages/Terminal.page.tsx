@@ -2,6 +2,7 @@ import Chart from '@app/components/Chart';
 import { Sidebar } from '@app/components/Sidebar';
 import { useModels } from '@app/models';
 import { Group } from '@mantine/core';
+import { useForceUpdate } from '@mantine/hooks';
 import { observer } from 'mobx-react-lite';
 import { useEffect } from 'react';
 
